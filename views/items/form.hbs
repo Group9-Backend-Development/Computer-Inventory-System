@@ -1,7 +1,13 @@
-<section class="page">
-  <h1>{{title}}</h1>
-  <p>Form fields: item ID, serial, model, brand, category, status, date acquired.</p>
+<section class="space-y-4 rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
+  <h1 class="text-2xl font-bold text-slate-800">{{title}}</h1>
+  <p class="text-slate-600">Form fields: item ID, serial, model, brand, category, status, date acquired.</p>
   {{#if item}}
-    <p>Editing reference: <code>{{item.id}}</code></p>
+    <p class="text-sm text-slate-600">Editing reference: <code class="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700">{{item.id}}</code></p>
   {{/if}}
+  <div class="grid gap-4 md:grid-cols-2">
+    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" placeholder="Item ID" />
+    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" placeholder="Serial Number" />
+    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" placeholder="Model" />
+    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" placeholder="Brand" />
+  </div>
 </section>

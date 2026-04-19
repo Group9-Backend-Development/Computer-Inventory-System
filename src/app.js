@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 
-const { globalLimiter } = require('./middleware/rateLimiter');
+// const { globalLimiter } = require('./middleware/rateLimiter');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 const authRoutes = require('./routes/auth.routes');
@@ -23,9 +23,10 @@ const publicPath = path.join(__dirname, '..', 'public');
 app.set('view engine', 'hbs');
 app.set('views', viewsPath);
 app.set('view options', { layout: 'layouts/main' });
+app.set('view cache', false);
 hbs.registerPartials(path.join(viewsPath, 'partials'));
 
-app.use(globalLimiter);
+// app.use(globalLimiter);
 app.use(morgan('combined'));
 app.use(
   cors({

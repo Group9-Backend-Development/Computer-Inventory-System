@@ -1,5 +1,25 @@
-<section class="page">
-  <h1>{{title}}</h1>
-  <p><a href="/items/new">Add item</a></p>
-  <p>Server-rendered list will load from the API or service layer.</p>
+<section class="space-y-4 rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold text-slate-800">{{title}}</h1>
+    <a class="rounded-lg border border-sky-300 bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200" href="/items/new">Add item</a>
+  </div>
+  <p class="text-slate-600">Server-rendered list will load from the API or service layer.</p>
+  <div class="overflow-x-auto rounded-xl border border-slate-200">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-slate-600">
+        <tr>
+          <th class="px-4 py-3 text-left font-semibold">Item ID</th>
+          <th class="px-4 py-3 text-left font-semibold">Model</th>
+          <th class="px-4 py-3 text-left font-semibold">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200 bg-white text-slate-700">
+        <tr>
+          <td class="px-4 py-3">INV-1001</td>
+          <td class="px-4 py-3">Dell Latitude</td>
+          <td class="px-4 py-3 text-emerald-300">Available</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </section>
