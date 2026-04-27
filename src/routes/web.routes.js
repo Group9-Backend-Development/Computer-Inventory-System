@@ -12,6 +12,10 @@ router.get('/items/:id/history', webController.itemsHistory);
 router.get('/items/:id', webController.itemsDetail);
 router.get('/items', webController.itemsIndex);
 
+router.post('/items', webController.itemsCreate);
+router.post('/items/:id/edit', webController.itemsUpdate);
+router.post('/items/:id/delete', webController.itemsDelete);
+
 router.get('/users/new', webController.usersNew);
 router.get('/users', webController.usersIndex);
 

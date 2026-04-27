@@ -1,8 +1,30 @@
 <section class="space-y-4 rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
   <h1 class="text-2xl font-bold text-slate-800">{{title}}</h1>
-  <p class="text-slate-600">Item <code class="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700">{{id}}</code></p>
+
+  <div class="grid gap-4 md:grid-cols-2 text-slate-700">
+    <div><strong>Item ID:</strong> {{item.itemId}}</div>
+    <div><strong>Serial Number:</strong> {{item.serialNumber}}</div>
+    <div><strong>Brand:</strong> {{item.brand}}</div>
+    <div><strong>Model:</strong> {{item.model}}</div>
+    <div><strong>Classification:</strong> {{item.classification}}</div>
+    <div><strong>Category:</strong> {{item.category}}</div>
+    <div><strong>Status:</strong> {{item.status}}</div>
+    <div><strong>Date Acquired:</strong> {{item.dateAcquired}}</div>
+  </div>
+
   <div class="flex flex-wrap gap-3">
-    <a class="rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300" href="/items/{{id}}/history">View history</a>
-    <a class="rounded-lg border border-sky-300 bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200" href="/items/{{id}}/edit">Edit item</a>
+    <a class="rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300" href="/items/{{item._id}}/history">View history</a>
+    <a class="rounded-lg border border-sky-300 bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200" href="/items/{{item._id}}/edit">Edit item</a>
+
+    <form method="POST" action="/items/{{item._id}}/delete">
+      <button
+        type="submit"
+        class="rounded-lg border border-red-300 bg-red-100 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-200"
+      >
+        Delete item
+      </button>
+    </form>
+
+    <a class="rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300" href="/items">Back to items</a>
   </div>
 </section>

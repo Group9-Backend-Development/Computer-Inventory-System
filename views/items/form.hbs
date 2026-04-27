@@ -1,13 +1,121 @@
 <section class="space-y-4 rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
   <h1 class="text-2xl font-bold text-slate-800">{{title}}</h1>
-  <p class="text-slate-600">Form fields: item ID, serial, model, brand, category, status, date acquired.</p>
-  {{#if item}}
-    <p class="text-sm text-slate-600">Editing reference: <code class="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700">{{item.id}}</code></p>
-  {{/if}}
-  <div class="grid gap-4 md:grid-cols-2">
-    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" placeholder="Item ID" />
-    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" placeholder="Serial Number" />
-    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" placeholder="Model" />
-    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" placeholder="Brand" />
-  </div>
+
+  <form
+    method="POST"
+    action="{{#if item}}/items/{{item._id}}/edit{{else}}/items{{/if}}"
+    class="space-y-4"
+  >
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Item ID</label>
+        <input
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          type="text"
+          name="itemId"
+          value="{{item.itemId}}"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Serial Number</label>
+        <input
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          type="text"
+          name="serialNumber"
+          value="{{item.serialNumber}}"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Model</label>
+        <input
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          type="text"
+          name="model"
+          value="{{item.model}}"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Brand</label>
+        <input
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          type="text"
+          name="brand"
+          value="{{item.brand}}"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Classification</label>
+        <select
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          name="classification"
+          required
+        >
+          <option value="">Select classification</option>
+          <option value="Computer" {{#if (eq item.classification "Computer")}}selected{{/if}}>Computer</option>
+          <option value="Peripheral" {{#if (eq item.classification "Peripheral")}}selected{{/if}}>Peripheral</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Category</label>
+        <input
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          type="text"
+          name="category"
+          value="{{item.category}}"
+          placeholder="Laptop, Desktop, Server, Monitor, Keyboard..."
+          required
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Status</label>
+        <select
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          name="status"
+          required
+        >
+          <option value="Available" {{#if (eq item.status "Available")}}selected{{/if}}>Available</option>
+          <option value="In-Use" {{#if (eq item.status "In-Use")}}selected{{/if}}>In-Use</option>
+          <option value="Maintenance" {{#if (eq item.status "Maintenance")}}selected{{/if}}>Maintenance</option>
+          <option value="Retired" {{#if (eq item.status "Retired")}}selected{{/if}}>Retired</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Date Acquired</label>
+        <input
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          type="date"
+          name="dateAcquired"
+          value="{{item.dateAcquired}}"
+          required
+        />
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button
+        type="submit"
+        class="rounded-lg border border-sky-300 bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200"
+      >
+        {{#if item}}Update Item{{else}}Create Item{{/if}}
+      </button>
+
+      <a
+        href="/items"
+        class="rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300"
+      >
+        Cancel
+      </a>
+    </div>
+  </form>
 </section>

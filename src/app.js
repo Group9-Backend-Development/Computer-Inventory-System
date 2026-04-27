@@ -25,6 +25,9 @@ app.set('views', viewsPath);
 app.set('view options', { layout: 'layouts/main' });
 app.set('view cache', false);
 hbs.registerPartials(path.join(viewsPath, 'partials'));
+hbs.registerHelper('eq', function (a, b) {
+  return a === b;
+});
 
 // app.use(globalLimiter);
 app.use(morgan('combined'));
