@@ -1,65 +1,125 @@
-const items = require('../data/mockItems');
+const supabase = require('../config/supabase');
 
-function generateId() {
-  return Date.now().toString();
+function mapItem(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    _id: row.id,
+    itemId: row.item_id,
+    serialNumber: row.serial_number,
+    model: row.model,
+    brand: row.brand,
+    classification: row.classification,
+    category: row.category,
+    status: row.status,
+    dateAcquired: row.date_acquired,
+    isDeleted: row.is_deleted,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 async function listActiveItems() {
-  return items
-    .filter((item) => !item.isDeleted)
-    .sort((a, b) => a.itemId.localeCompare(b.itemId));
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('is_deleted', false)
+    .order('item_id', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map(mapItem);
 }
 
 async function findActiveItemById(id) {
-  return items.find((item) => item._id === id && !item.isDeleted) || null;
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('id', id)
+    .eq('is_deleted', false)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapItem(data);
 }
 
 async function createItem(data) {
-  const newItem = {
-    _id: generateId(),
-    itemId: data.itemId,
-    serialNumber: data.serialNumber,
+  const payload = {
+    item_id: data.itemId,
+    serial_number: data.serialNumber,
     model: data.model,
     brand: data.brand,
     classification: data.classification,
     category: data.category,
     status: data.status,
-    dateAcquired: data.dateAcquired,
-    isDeleted: false,
+    date_acquired: data.dateAcquired,
   };
 
-  items.push(newItem);
-  return newItem;
+  const { data: createdItem, error } = await supabase
+    .from('items')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapItem(createdItem);
 }
 
 async function updateItem(id, data) {
-  const item = items.find((item) => item._id === id && !item.isDeleted);
+  const payload = {
+    item_id: data.itemId,
+    serial_number: data.serialNumber,
+    model: data.model,
+    brand: data.brand,
+    classification: data.classification,
+    category: data.category,
+    status: data.status,
+    date_acquired: data.dateAcquired,
+    updated_at: new Date().toISOString(),
+  };
 
-  if (!item) {
-    return null;
+  const { data: updatedItem, error } = await supabase
+    .from('items')
+    .update(payload)
+    .eq('id', id)
+    .eq('is_deleted', false)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw error;
   }
 
-  item.itemId = data.itemId;
-  item.serialNumber = data.serialNumber;
-  item.model = data.model;
-  item.brand = data.brand;
-  item.classification = data.classification;
-  item.category = data.category;
-  item.status = data.status;
-  item.dateAcquired = data.dateAcquired;
-
-  return item;
+  return mapItem(updatedItem);
 }
 
 async function softDeleteItem(id) {
-  const item = items.find((item) => item._id === id && !item.isDeleted);
+  const { data: deletedItem, error } = await supabase
+    .from('items')
+    .update({
+      is_deleted: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('is_deleted', false)
+    .select()
+    .maybeSingle();
 
-  if (!item) {
-    return null;
+  if (error) {
+    throw error;
   }
 
-  item.isDeleted = true;
-  return item;
+  return mapItem(deletedItem);
 }
 
 module.exports = {

@@ -11,7 +11,18 @@ function loginForm(req, res) {
 async function itemsIndex(req, res, next) {
   try {
     const items = await itemService.listActiveItems();
-    res.render('items/index', { title: 'Inventory items', items });
+    const selectedStatus = req.query.status || '';
+
+    const filteredItems = selectedStatus
+      ? items.filter((item) => item.status === selectedStatus)
+      : items;
+
+    res.render('items/index', {
+      title: 'Inventory items',
+      items: filteredItems,
+      selectedStatus,
+      statuses: ['Available', 'In-Use', 'Maintenance', 'Retired'],
+    });
   } catch (error) {
     next(error);
   }
@@ -121,11 +132,15 @@ async function itemsDetail(req, res, next) {
       return res.status(404).render('errors/not-found', { title: 'Item not found' });
     }
 
+    if (item.dateAcquired) {
+      item.dateAcquired = new Date(item.dateAcquired).toISOString().split('T')[0];
+    }
+
     res.render('items/detail', { title: 'Item detail', item });
   } catch (error) {
     next(error);
   }
-}
+} 
 
 async function itemsDelete(req, res, next) {
   try {

@@ -4,6 +4,38 @@
     <a class="rounded-lg border border-sky-300 bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200" href="/items/new">Add item</a>
   </div>
 
+  <form method="GET" action="/items" class="flex flex-wrap items-end gap-3">
+    <div>
+      <label class="mb-1 block text-sm font-medium text-slate-700">Filter by status</label>
+      <select
+        name="status"
+        class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+      >
+        <option value="">All statuses</option>
+        <option value="Available" {{#if (eq selectedStatus "Available")}}selected{{/if}}>Available</option>
+        <option value="In-Use" {{#if (eq selectedStatus "In-Use")}}selected{{/if}}>In-Use</option>
+        <option value="Maintenance" {{#if (eq selectedStatus "Maintenance")}}selected{{/if}}>Maintenance</option>
+        <option value="Retired" {{#if (eq selectedStatus "Retired")}}selected{{/if}}>Retired</option>
+      </select>
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        type="submit"
+        class="rounded-lg border border-sky-300 bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200"
+      >
+        Apply
+      </button>
+
+      <a
+        href="/items"
+        class="rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300"
+      >
+        Clear
+      </a>
+    </div>
+  </form>
+
   <div class="overflow-x-auto rounded-xl border border-slate-200">
     <table class="min-w-full divide-y divide-slate-200 text-sm">
       <thead class="bg-slate-50 text-slate-600">

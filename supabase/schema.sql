@@ -13,12 +13,13 @@ create table if not exists public.users (
 create table if not exists public.items (
   id uuid primary key default gen_random_uuid(),
   item_id text not null unique,
-  serial_number text,
-  model text,
-  brand text,
-  category text,
+  serial_number text not null,
+  model text not null,
+  brand text not null,
+  classification text not null check (classification in ('Computer', 'Peripheral')),
+  category text not null,
   status text not null default 'Available' check (status in ('Available', 'In-Use', 'Maintenance', 'Retired')),
-  date_acquired timestamptz,
+  date_acquired timestamptz not null,
   is_deleted boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
