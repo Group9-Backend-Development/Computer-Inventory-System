@@ -12,6 +12,54 @@
     <div><strong>Date Acquired:</strong> {{item.dateAcquired}}</div>
   </div>
 
+  {{#if currentAssignment}}
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <strong>Current assignee:</strong> {{currentAssignment.assigneeName}}
+      <span class="mx-2 text-amber-400">·</span>
+      Checked out {{currentAssignment.checkedOutAt}}
+      <span class="mx-2 text-amber-400">·</span>
+      {{currentAssignment.durationLabel}}
+    </div>
+  {{/if}}
+
+  <div class="grid gap-4 lg:grid-cols-2">
+    <section class="space-y-3">
+      <h2 class="text-lg font-semibold text-slate-800">Recent transactions</h2>
+      <ol class="space-y-2">
+        {{#if recentTransactions.length}}
+          {{#each recentTransactions}}
+            <li class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+              <div class="font-semibold capitalize">{{this.type}} · {{this.createdAtLabel}}</div>
+              <div>Assignee: {{this.assigneeName}}</div>
+              {{#if this.documentUrl}}
+                <a class="text-sky-700 hover:underline" href="{{this.documentUrl}}" target="_blank" rel="noopener">{{this.documentName}}</a>
+              {{/if}}
+            </li>
+          {{/each}}
+        {{else}}
+          <li class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">No transactions yet.</li>
+        {{/if}}
+      </ol>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-lg font-semibold text-slate-800">Usage history</h2>
+      <ol class="space-y-2">
+        {{#if assignments.length}}
+          {{#each assignments}}
+            <li class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+              <div class="font-semibold">{{this.assigneeName}} · {{this.statusLabel}}</div>
+              <div>{{this.checkedOutAt}} to {{#if this.checkedInAt}}{{this.checkedInAt}}{{else}}now{{/if}}</div>
+              <div class="text-slate-500">{{this.durationLabel}}</div>
+            </li>
+          {{/each}}
+        {{else}}
+          <li class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">No assignment history yet.</li>
+        {{/if}}
+      </ol>
+    </section>
+  </div>
+
   <div class="flex flex-wrap gap-3">
     <a class="rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300" href="/items/{{item._id}}/history">View history</a>
     <a class="rounded-lg border border-sky-300 bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200" href="/items/{{item._id}}/edit">Edit item</a>

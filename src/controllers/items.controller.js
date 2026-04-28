@@ -1,4 +1,5 @@
 const itemService = require('../services/item.service');
+const transactionService = require('../services/transaction.service');
 
 async function list(req, res, next) {
   try {
@@ -25,7 +26,16 @@ async function getById(req, res, next) {
 
 async function history(req, res, next) {
   try {
-    res.json([]);
+    const item = await itemService.findActiveItemById(req.params.id);
+
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const transactions = await transactionService.listHistoryForItem(req.params.id);
+    const assignments = transactionService.buildAssignmentHistory(transactions);
+
+    res.json({ item, transactions, assignments });
   } catch (error) {
     next(error);
   }

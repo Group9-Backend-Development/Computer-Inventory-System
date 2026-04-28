@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 function required(name) {
   const value = process.env[name];
   if (!value) {
@@ -12,6 +14,10 @@ module.exports = {
   mongoUri: process.env.MONGODB_URI,
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  useMockData:
+    process.env.USE_MOCK_DATA === 'true' ||
+    !process.env.SUPABASE_URL ||
+    process.env.SUPABASE_URL === 'change-me-in-production',
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
   corsOrigin: process.env.CORS_ORIGIN || null,

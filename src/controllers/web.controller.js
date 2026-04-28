@@ -1,4 +1,11 @@
 const itemService = require('../services/item.service');
+const transactionService = require('../services/transaction.service');
+const reportService = require('../services/report.service');
+const userService = require('../services/user.service');
+
+function uploadedDocumentPath(file) {
+  return file ? `/documents/${file.filename}` : null;
+}
 
 function home(req, res) {
   res.render('home', { title: 'Dashboard' });
@@ -136,7 +143,17 @@ async function itemsDetail(req, res, next) {
       item.dateAcquired = new Date(item.dateAcquired).toISOString().split('T')[0];
     }
 
-    res.render('items/detail', { title: 'Item detail', item });
+    const transactions = await transactionService.listHistoryForItem(req.params.id);
+    const assignments = transactionService.buildAssignmentHistory(transactions);
+    const currentAssignment = assignments.find((assignment) => assignment.statusLabel === 'Active');
+
+    res.render('items/detail', {
+      title: 'Item detail',
+      item,
+      currentAssignment,
+      recentTransactions: transactions.slice(-5).reverse(),
+      assignments: assignments.slice(0, 3),
+    });
   } catch (error) {
     next(error);
   }
@@ -156,36 +173,144 @@ async function itemsDelete(req, res, next) {
   }
 }
 
-function itemsHistory(req, res) {
-  res.render('items/history', { title: 'Item history', id: req.params.id });
+async function itemsHistory(req, res, next) {
+  try {
+    const item = await itemService.findActiveItemById(req.params.id);
+
+    if (!item) {
+      return res.status(404).render('errors/not-found', { title: 'Item not found' });
+    }
+
+    const transactions = await transactionService.listHistoryForItem(req.params.id);
+    const assignments = transactionService.buildAssignmentHistory(transactions);
+
+    res.render('items/history', {
+      title: 'Item history',
+      item,
+      transactions: transactions.slice().reverse(),
+      assignments,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 function usersNew(req, res) {
   res.render('users/form', {
     title: 'New user',
     user: null,
-    roles: ['Admin', 'Staff'],
+    roles: ['admin', 'technician'],
   });
 }
 
-function usersIndex(req, res) {
-  res.render('users/index', { title: 'Users', users: [] });
+async function usersIndex(req, res, next) {
+  try {
+    const users = await userService.listUsers();
+    res.render('users/index', { title: 'Users', users });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function usersCreate(req, res, next) {
+  try {
+    await userService.createUser({
+      email: req.body.email,
+      password: req.body.password,
+      role: req.body.role,
+      isEnabled: req.body.isEnabled === 'on',
+    });
+
+    res.redirect('/users');
+  } catch (error) {
+    next(error);
+  }
 }
 
 function keysIndex(req, res) {
   res.render('keys/index', { title: 'API keys', keys: [] });
 }
 
-function reportsIndex(req, res) {
-  res.render('reports/index', { title: 'Reports' });
+async function reportsIndex(req, res, next) {
+  try {
+    const [inventorySummary, agingItems] = await Promise.all([
+      reportService.inventoryStatusSummary(),
+      reportService.listAssetsOlderThanThreeYears(),
+    ]);
+
+    res.render('reports/index', {
+      title: 'Reports',
+      inventorySummary,
+      agingItems,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
-function transactionsCheckout(req, res) {
-  res.render('transactions/checkout', { title: 'Checkout item' });
+async function transactionsCheckout(req, res, next) {
+  try {
+    const [items, users] = await Promise.all([
+      itemService.listActiveItems(),
+      transactionService.listUsers(),
+    ]);
+
+    res.render('transactions/checkout', {
+      title: 'Checkout item',
+      items: items.filter((item) => item.status === 'Available'),
+      users,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
-function transactionsCheckin(req, res) {
-  res.render('transactions/checkin', { title: 'Checkin item' });
+async function transactionsCheckin(req, res, next) {
+  try {
+    const [items, users] = await Promise.all([
+      itemService.listActiveItems(),
+      transactionService.listUsers(),
+    ]);
+
+    res.render('transactions/checkin', {
+      title: 'Checkin item',
+      items: items.filter((item) => item.status === 'In-Use'),
+      users,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function transactionsCheckoutCreate(req, res, next) {
+  try {
+    await transactionService.checkoutItem({
+      itemId: req.body.itemId,
+      assigneeId: req.body.assigneeId,
+      performedById: req.body.performedById,
+      documentPath: uploadedDocumentPath(req.file),
+      note: req.body.note,
+    });
+
+    res.redirect(`/items/${req.body.itemId}/history`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function transactionsCheckinCreate(req, res, next) {
+  try {
+    await transactionService.checkinItem({
+      itemId: req.body.itemId,
+      performedById: req.body.performedById,
+      documentPath: uploadedDocumentPath(req.file),
+      note: req.body.note,
+    });
+
+    res.redirect(`/items/${req.body.itemId}/history`);
+  } catch (error) {
+    next(error);
+  }
 }
 
 module.exports = {
@@ -201,8 +326,11 @@ module.exports = {
   itemsHistory,
   usersNew,
   usersIndex,
+  usersCreate,
   keysIndex,
   reportsIndex,
   transactionsCheckout,
   transactionsCheckin,
+  transactionsCheckoutCreate,
+  transactionsCheckinCreate,
 };

@@ -1,4 +1,6 @@
 const supabase = require('../config/supabase');
+const env = require('../config/env');
+const mockStore = require('../data/mockStore');
 
 function mapItem(row) {
   if (!row) {
@@ -22,6 +24,14 @@ function mapItem(row) {
 }
 
 async function listActiveItems() {
+  if (env.useMockData) {
+    return mockStore.clone(
+      mockStore.items
+        .filter((item) => !item.isDeleted)
+        .sort((a, b) => a.itemId.localeCompare(b.itemId))
+    );
+  }
+
   const { data, error } = await supabase
     .from('items')
     .select('*')
@@ -36,6 +46,11 @@ async function listActiveItems() {
 }
 
 async function findActiveItemById(id) {
+  if (env.useMockData) {
+    const item = mockStore.items.find((row) => row._id === id && !row.isDeleted);
+    return mockStore.clone(item || null);
+  }
+
   const { data, error } = await supabase
     .from('items')
     .select('*')
@@ -51,6 +66,25 @@ async function findActiveItemById(id) {
 }
 
 async function createItem(data) {
+  if (env.useMockData) {
+    const item = {
+      _id: String(mockStore.items.length + 1),
+      itemId: data.itemId,
+      serialNumber: data.serialNumber,
+      model: data.model,
+      brand: data.brand,
+      classification: data.classification,
+      category: data.category,
+      status: data.status || 'Available',
+      dateAcquired: data.dateAcquired,
+      isDeleted: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    mockStore.items.push(item);
+    return mockStore.clone(item);
+  }
+
   const payload = {
     item_id: data.itemId,
     serial_number: data.serialNumber,
@@ -76,6 +110,26 @@ async function createItem(data) {
 }
 
 async function updateItem(id, data) {
+  if (env.useMockData) {
+    const item = mockStore.items.find((row) => row._id === id && !row.isDeleted);
+    if (!item) {
+      return null;
+    }
+
+    Object.assign(item, {
+      itemId: data.itemId,
+      serialNumber: data.serialNumber,
+      model: data.model,
+      brand: data.brand,
+      classification: data.classification,
+      category: data.category,
+      status: data.status,
+      dateAcquired: data.dateAcquired,
+      updatedAt: new Date().toISOString(),
+    });
+    return mockStore.clone(item);
+  }
+
   const payload = {
     item_id: data.itemId,
     serial_number: data.serialNumber,
@@ -103,7 +157,52 @@ async function updateItem(id, data) {
   return mapItem(updatedItem);
 }
 
+async function updateItemStatus(id, status, currentStatus) {
+  if (env.useMockData) {
+    const item = mockStore.items.find((row) => row._id === id && !row.isDeleted);
+    if (!item || (currentStatus && item.status !== currentStatus)) {
+      return null;
+    }
+
+    item.status = status;
+    item.updatedAt = new Date().toISOString();
+    return mockStore.clone(item);
+  }
+
+  let query = supabase
+    .from('items')
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('is_deleted', false);
+
+  if (currentStatus) {
+    query = query.eq('status', currentStatus);
+  }
+
+  const { data: updatedItem, error } = await query.select().maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapItem(updatedItem);
+}
+
 async function softDeleteItem(id) {
+  if (env.useMockData) {
+    const item = mockStore.items.find((row) => row._id === id && !row.isDeleted);
+    if (!item) {
+      return null;
+    }
+
+    item.isDeleted = true;
+    item.updatedAt = new Date().toISOString();
+    return mockStore.clone(item);
+  }
+
   const { data: deletedItem, error } = await supabase
     .from('items')
     .update({
@@ -127,5 +226,6 @@ module.exports = {
   findActiveItemById,
   createItem,
   updateItem,
+  updateItemStatus,
   softDeleteItem,
 };

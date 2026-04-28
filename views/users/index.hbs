@@ -4,4 +4,24 @@
     <a class="rounded-lg border border-sky-300 bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200" href="/users/new">Create user</a>
   </div>
   <p class="text-slate-600">Admin can manage user roles: <span class="font-semibold text-slate-800">Admin</span> and <span class="font-semibold text-slate-800">Technician</span>.</p>
+  <div class="overflow-hidden rounded-lg border border-slate-200">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-slate-50 text-slate-600">
+        <tr>
+          <th class="px-4 py-3 font-semibold">Email</th>
+          <th class="px-4 py-3 font-semibold">Role</th>
+          <th class="px-4 py-3 font-semibold">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200">
+        {{#each users}}
+          <tr>
+            <td class="px-4 py-3 text-slate-800">{{email}}</td>
+            <td class="px-4 py-3 capitalize text-slate-700">{{role}}</td>
+            <td class="px-4 py-3 text-slate-700">{{#if isEnabled}}Enabled{{else}}Disabled{{/if}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
 </section>

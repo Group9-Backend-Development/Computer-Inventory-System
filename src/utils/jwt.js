@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 function getSecret() {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
+    if (process.env.NODE_ENV !== 'production') {
+      return 'development-only-secret';
+    }
     throw new Error('JWT_SECRET is not set');
   }
   return secret;

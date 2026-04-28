@@ -1,5 +1,53 @@
-<section class="space-y-4 rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
-  <h1 class="text-2xl font-bold text-slate-800">{{title}}</h1>
-  <p class="text-slate-600">Assign an available item with a reference document upload.</p>
-  <p class="text-sm text-slate-500">Endpoint: <code class="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700">POST /api/transactions/checkout</code></p>
+<section class="space-y-5 rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800">{{title}}</h1>
+    <p class="mt-1 text-slate-600">Assign an available item to a user with a reference document.</p>
+  </div>
+
+  <form method="POST" action="/transactions/checkout" enctype="multipart/form-data" class="grid gap-4 md:grid-cols-2">
+    <div>
+      <label class="mb-1 block text-sm font-medium text-slate-700" for="itemId">Available item</label>
+      <select id="itemId" name="itemId" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">
+        <option value="">Select item</option>
+        {{#each items}}
+          <option value="{{this._id}}">{{this.itemId}} · {{this.brand}} {{this.model}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-slate-700" for="assigneeId">Assignee</label>
+      <select id="assigneeId" name="assigneeId" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">
+        <option value="">Select user</option>
+        {{#each users}}
+          <option value="{{this._id}}">{{this.email}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-slate-700" for="performedById">Processed by</label>
+      <select id="performedById" name="performedById" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">
+        <option value="">Select user</option>
+        {{#each users}}
+          <option value="{{this._id}}">{{this.email}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-medium text-slate-700" for="document">Reference document</label>
+      <input id="document" name="document" type="file" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" />
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="mb-1 block text-sm font-medium text-slate-700" for="note">Note</label>
+      <textarea id="note" name="note" rows="3" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"></textarea>
+    </div>
+
+    <div class="md:col-span-2 flex flex-wrap gap-3">
+      <button type="submit" class="rounded-lg border border-sky-300 bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200">Check out item</button>
+      <a class="rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300" href="/items">Cancel</a>
+    </div>
+  </form>
 </section>

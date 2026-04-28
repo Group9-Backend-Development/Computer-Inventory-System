@@ -1,5 +1,6 @@
 const express = require('express');
 const webController = require('../controllers/web.controller');
+const { uploadSingle } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -18,11 +19,14 @@ router.post('/items/:id/delete', webController.itemsDelete);
 
 router.get('/users/new', webController.usersNew);
 router.get('/users', webController.usersIndex);
+router.post('/users', webController.usersCreate);
 
 router.get('/keys', webController.keysIndex);
 router.get('/reports', webController.reportsIndex);
 
 router.get('/transactions/checkout', webController.transactionsCheckout);
 router.get('/transactions/checkin', webController.transactionsCheckin);
+router.post('/transactions/checkout', uploadSingle.single('document'), webController.transactionsCheckoutCreate);
+router.post('/transactions/checkin', uploadSingle.single('document'), webController.transactionsCheckinCreate);
 
 module.exports = router;
