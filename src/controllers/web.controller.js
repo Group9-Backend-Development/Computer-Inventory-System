@@ -1,4 +1,6 @@
 const itemService = require('../services/item.service');
+const userService = require('../services/user.service');
+const bcrypt = require('bcrypt');
 
 function home(req, res) {
   res.render('home', { title: 'Dashboard' });
@@ -61,9 +63,9 @@ async function itemsCreate(req, res, next) {
       dateAcquired,
     });
 
-    res.redirect('/items');
+    return res.redirect('/items');
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
 
@@ -118,9 +120,9 @@ async function itemsUpdate(req, res, next) {
       return res.status(404).render('errors/not-found', { title: 'Item not found' });
     }
 
-    res.redirect(`/items/${req.params.id}`);
+    return res.redirect(`/items/${req.params.id}`);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
 
@@ -140,7 +142,7 @@ async function itemsDetail(req, res, next) {
   } catch (error) {
     next(error);
   }
-} 
+}
 
 async function itemsDelete(req, res, next) {
   try {
@@ -150,9 +152,9 @@ async function itemsDelete(req, res, next) {
       return res.status(404).render('errors/not-found', { title: 'Item not found' });
     }
 
-    res.redirect('/items');
+    return res.redirect('/items');
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
 
@@ -164,12 +166,96 @@ function usersNew(req, res) {
   res.render('users/form', {
     title: 'New user',
     user: null,
-    roles: ['Admin', 'Staff'],
   });
 }
 
-function usersIndex(req, res) {
-  res.render('users/index', { title: 'Users', users: [] });
+async function usersCreate(req, res, next) {
+  try {
+    const { email, password, role } = req.body;
+
+    if (!email || !password || !role) {
+      return res.status(400).render('users/form', {
+        title: 'New user',
+        user: { email, role },
+        error: 'Email, password, and role are required.',
+      });
+    }
+
+    if (!['admin', 'technician'].includes(role)) {
+      return res.status(400).render('users/form', {
+        title: 'New user',
+        user: { email, role },
+        error: 'Role must be admin or technician.',
+      });
+    }
+
+    const existingUser = await userService.findUserByEmail(email);
+
+    if (existingUser) {
+      return res.status(409).render('users/form', {
+        title: 'New user',
+        user: { email, role },
+        error: 'Email already exists.',
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await userService.createUser({
+      email,
+      passwordHash,
+      role,
+    });
+
+    return res.redirect('/users');
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function usersIndex(req, res, next) {
+  try {
+    const users = await userService.listUsers();
+    return res.render('users/index', { title: 'Users', users });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function usersUpdateRole(req, res, next) {
+  try {
+    const { role } = req.body;
+
+    if (!role || !['admin', 'technician'].includes(role)) {
+      return res.status(400).render('errors/not-found', { title: 'Invalid role' });
+    }
+
+    const updatedUser = await userService.updateUserRole(req.params.id, role);
+
+    if (!updatedUser) {
+      return res.status(404).render('errors/not-found', { title: 'User not found' });
+    }
+
+    return res.redirect('/users');
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function usersUpdateStatus(req, res, next) {
+  try {
+    const isEnabled = req.body.isEnabled === 'true';
+
+    const updatedUser = await userService.updateUserStatus(req.params.id, isEnabled);
+
+    if (!updatedUser) {
+      return res.status(404).render('errors/not-found', { title: 'User not found' });
+    }
+
+    return res.redirect('/users');
+  } catch (error) {
+    return next(error);
+  }
 }
 
 function keysIndex(req, res) {
@@ -200,7 +286,10 @@ module.exports = {
   itemsDelete,
   itemsHistory,
   usersNew,
+  usersCreate,
   usersIndex,
+  usersUpdateRole,
+  usersUpdateStatus,
   keysIndex,
   reportsIndex,
   transactionsCheckout,

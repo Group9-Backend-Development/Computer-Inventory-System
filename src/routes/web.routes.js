@@ -18,6 +18,9 @@ router.post('/items/:id/delete', webController.itemsDelete);
 
 router.get('/users/new', webController.usersNew);
 router.get('/users', webController.usersIndex);
+router.post('/users', webController.usersCreate);
+router.post('/users/:id/role', webController.usersUpdateRole);
+router.post('/users/:id/status', webController.usersUpdateStatus);
 
 router.get('/keys', webController.keysIndex);
 router.get('/reports', webController.reportsIndex);
