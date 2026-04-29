@@ -1,11 +1,12 @@
-const bcrypt = require('bcrypt');
 const userService = require('../services/user.service');
+const { hashPassword } = require('../utils/password');
 
 async function create(req, res, next) {
   try {
     const { email, password, role } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-    if (!email || !password || !role) {
+    if (!normalizedEmail || !password || !role) {
       return res.status(400).json({
         error: 'email, password, and role are required',
       });
@@ -17,7 +18,7 @@ async function create(req, res, next) {
       });
     }
 
-    const existingUser = await userService.findUserByEmail(email);
+    const existingUser = await userService.findUserByEmail(normalizedEmail);
 
     if (existingUser) {
       return res.status(409).json({
@@ -25,10 +26,10 @@ async function create(req, res, next) {
       });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await hashPassword(password);
 
     const user = await userService.createUser({
-      email,
+      email: normalizedEmail,
       passwordHash,
       role,
     });

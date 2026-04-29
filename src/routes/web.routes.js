@@ -1,11 +1,17 @@
 const express = require('express');
 const webController = require('../controllers/web.controller');
 const { uploadSingle } = require('../middleware/upload');
+const { redirectIfLoggedIn, requireWebAuth } = require('../middleware/webAuth');
 
 const router = express.Router();
 
+router.get('/login', redirectIfLoggedIn, webController.loginForm);
+router.post('/login', webController.loginSubmit);
+router.post('/logout', requireWebAuth, webController.logout);
+
+router.use(requireWebAuth);
+
 router.get('/', webController.home);
-router.get('/login', webController.loginForm);
 
 router.get('/items/new', webController.itemsNew);
 router.get('/items/:id/edit', webController.itemsEdit);

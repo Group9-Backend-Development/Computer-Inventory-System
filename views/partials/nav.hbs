@@ -8,7 +8,12 @@
     </span>
   </a>
 
+  {{#if currentUser}}
+    <p class="mb-4 truncate text-xs text-slate-500" title="{{currentUser.email}}">{{currentUser.email}}</p>
+  {{/if}}
+
   <nav class="grid grid-cols-2 gap-2 text-sm font-medium lg:grid-cols-1" aria-label="Primary">
+    {{#if currentUser}}
     <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'home')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'home')}}aria-current="page"{{/if}} href="/">Home</a>
     <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'items')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'items')}}aria-current="page"{{/if}} href="/items">Items</a>
     <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'checkout')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'checkout')}}aria-current="page"{{/if}} href="/transactions/checkout">Check out</a>
@@ -16,6 +21,11 @@
     <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'reports')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'reports')}}aria-current="page"{{/if}} href="/reports">Reports</a>
     <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'users')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'users')}}aria-current="page"{{/if}} href="/users">Users</a>
     <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'keys')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'keys')}}aria-current="page"{{/if}} href="/keys">API keys</a>
+    <form method="post" action="/logout" class="col-span-2 lg:col-span-1">
+      <button type="submit" class="w-full rounded-lg border border-transparent px-3 py-2 text-left text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 lg:text-sm">Sign out</button>
+    </form>
+    {{else}}
     <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'login')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'login')}}aria-current="page"{{/if}} href="/login">Sign in</a>
+    {{/if}}
   </nav>
 </aside>

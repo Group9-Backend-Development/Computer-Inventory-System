@@ -1,6 +1,6 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const userService = require('../services/user.service');
+const { comparePassword } = require('../utils/password');
+const { signAccessToken } = require('../utils/jwt');
 
 async function login(req, res, next) {
   try {
@@ -12,7 +12,8 @@ async function login(req, res, next) {
       });
     }
 
-    const user = await userService.findUserByEmail(email);
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await userService.findUserByEmail(normalizedEmail);
 
     if (!user) {
       return res.status(401).json({
@@ -26,7 +27,7 @@ async function login(req, res, next) {
       });
     }
 
-    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+    const passwordMatches = await comparePassword(password, user.passwordHash);
 
     if (!passwordMatches) {
       return res.status(401).json({
@@ -34,17 +35,11 @@ async function login(req, res, next) {
       });
     }
 
-    const token = jwt.sign(
-      {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.JWT_EXPIRES_IN || '8h',
-      }
-    );
+    const token = signAccessToken({
+      sub: user.id,
+      role: user.role,
+      email: user.email,
+    });
 
     return res.json({
       token,

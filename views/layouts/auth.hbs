@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>{{title}} · Computer Inventory</title>
+  <link rel="icon" type="image/png" href="/images/logo.png" />
+  <meta name="theme-color" content="#0a4b97" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: "#eff8ff",
+              100: "#dceeff",
+              500: "#1184ff",
+              700: "#0a4b97",
+              900: "#040b18"
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800 antialiased">
+  <header class="border-b border-slate-200/80 bg-white">
+    <div class="mx-auto flex max-w-5xl items-center gap-3 px-4 py-5 sm:px-6">
+      <img
+        src="/images/logo.png"
+        alt=""
+        class="h-10 w-10 rounded-xl border border-slate-200 bg-white object-contain p-1"
+        aria-hidden="true"
+      />
+      <div class="leading-tight">
+        <span class="block text-[15px] font-semibold text-slate-900">Computer Inventory</span>
+        <span class="text-xs text-slate-500">Asset management</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex min-h-[calc(100vh-4.5rem)] flex-col justify-center px-4 py-12 sm:px-6">
+    {{{body}}}
+  </main>
+</body>
+</html>

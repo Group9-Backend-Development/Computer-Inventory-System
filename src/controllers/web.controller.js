@@ -2,7 +2,9 @@ const itemService = require('../services/item.service');
 const transactionService = require('../services/transaction.service');
 const reportService = require('../services/report.service');
 const userService = require('../services/user.service');
-const bcrypt = require('bcrypt');
+const { comparePassword, hashPassword } = require('../utils/password');
+const { signAccessToken } = require('../utils/jwt');
+const { setAuthCookie, clearAuthCookie, safeNextPath } = require('../middleware/webAuth');
 
 function uploadedDocumentPath(file) {
   return file ? `/documents/${file.filename}` : null;
@@ -13,7 +15,60 @@ function home(req, res) {
 }
 
 function loginForm(req, res) {
-  res.render('auth/login', { title: 'Sign in' });
+  const nextUrl = safeNextPath(typeof req.query.next === 'string' ? req.query.next : '');
+  res.render('auth/login', {
+    layout: 'layouts/auth',
+    title: 'Sign in',
+    next: nextUrl,
+    error: null,
+    email: '',
+  });
+}
+
+async function loginSubmit(req, res, next) {
+  try {
+    const { email, password, next: nextRaw } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const user = await userService.findUserByEmail(normalizedEmail);
+    const nextUrl = safeNextPath(typeof nextRaw === 'string' ? nextRaw : '');
+
+    if (!user || !user.isEnabled) {
+      return res.status(401).render('auth/login', {
+        layout: 'layouts/auth',
+        title: 'Sign in',
+        next: nextUrl,
+        error: 'Invalid email or password.',
+        email: normalizedEmail,
+      });
+    }
+
+    const passwordMatches = await comparePassword(password || '', user.passwordHash);
+    if (!passwordMatches) {
+      return res.status(401).render('auth/login', {
+        layout: 'layouts/auth',
+        title: 'Sign in',
+        next: nextUrl,
+        error: 'Invalid email or password.',
+        email: normalizedEmail,
+      });
+    }
+
+    const token = signAccessToken({
+      sub: user.id || user._id?.toString(),
+      role: user.role,
+      email: user.email,
+    });
+
+    setAuthCookie(res, token);
+    return res.redirect(nextUrl);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+function logout(req, res) {
+  clearAuthCookie(res);
+  res.redirect('/login');
 }
 
 async function itemsIndex(req, res, next) {
@@ -206,11 +261,12 @@ function usersNew(req, res) {
 async function usersCreate(req, res, next) {
   try {
     const { email, password, role } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-    if (!email || !password || !role) {
+    if (!normalizedEmail || !password || !role) {
       return res.status(400).render('users/form', {
         title: 'New user',
-        user: { email, role },
+        user: { email: normalizedEmail, role },
         error: 'Email, password, and role are required.',
       });
     }
@@ -218,25 +274,25 @@ async function usersCreate(req, res, next) {
     if (!['admin', 'technician'].includes(role)) {
       return res.status(400).render('users/form', {
         title: 'New user',
-        user: { email, role },
+        user: { email: normalizedEmail, role },
         error: 'Role must be admin or technician.',
       });
     }
 
-    const existingUser = await userService.findUserByEmail(email);
+    const existingUser = await userService.findUserByEmail(normalizedEmail);
 
     if (existingUser) {
       return res.status(409).render('users/form', {
         title: 'New user',
-        user: { email, role },
+        user: { email: normalizedEmail, role },
         error: 'Email already exists.',
       });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await hashPassword(password);
 
     await userService.createUser({
-      email,
+      email: normalizedEmail,
       passwordHash,
       role,
     });
@@ -381,6 +437,8 @@ async function transactionsCheckinCreate(req, res, next) {
 module.exports = {
   home,
   loginForm,
+  loginSubmit,
+  logout,
   itemsIndex,
   itemsNew,
   itemsCreate,
