@@ -1,53 +1,90 @@
-<section class="space-y-5 rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
-  <div>
-    <h1 class="text-2xl font-bold text-slate-800">{{title}}</h1>
-    <p class="mt-1 text-slate-600">Assign an available item to a user with a reference document.</p>
-  </div>
+<section class="space-y-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+  <header>
+    <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">Circulation</p>
+    <h1 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{{title}}</h1>
+    <p class="mt-2 max-w-2xl text-sm text-slate-600">
+      Reserve an asset that shows as available and attach supporting documentation for the assignment record.
+    </p>
+  </header>
 
-  <form method="POST" action="/transactions/checkout" enctype="multipart/form-data" class="grid gap-4 md:grid-cols-2">
-    <div>
-      <label class="mb-1 block text-sm font-medium text-slate-700" for="itemId">Available item</label>
-      <select id="itemId" name="itemId" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">
-        <option value="">Select item</option>
-        {{#each items}}
-          <option value="{{this._id}}">{{this.itemId}} · {{this.brand}} {{this.model}}</option>
-        {{/each}}
-      </select>
+  <form method="POST" action="/transactions/checkout" enctype="multipart/form-data" class="space-y-8">
+    <div class="grid gap-6 md:grid-cols-2">
+      <label class="block md:col-span-2 lg:col-span-1">
+        <span class="text-sm font-medium text-slate-700">Available item</span>
+        <select
+          id="itemId"
+          name="itemId"
+          required
+          class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-brand-700 focus:ring-2 focus:ring-brand-500/20"
+        >
+          <option value="">Select item</option>
+          {{#each items}}
+            <option value="{{this._id}}">{{this.itemId}} — {{this.brand}} {{this.model}}</option>
+          {{/each}}
+        </select>
+      </label>
+
+      <label class="block md:col-span-2 lg:col-span-1">
+        <span class="text-sm font-medium text-slate-700">Assignee</span>
+        <select
+          id="assigneeId"
+          name="assigneeId"
+          required
+          class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-brand-700 focus:ring-2 focus:ring-brand-500/20"
+        >
+          <option value="">Select user</option>
+          {{#each users}}
+            <option value="{{this._id}}">{{this.email}}</option>
+          {{/each}}
+        </select>
+      </label>
+
+      <label class="block md:col-span-2 lg:col-span-1">
+        <span class="text-sm font-medium text-slate-700">Processed by</span>
+        <select
+          id="performedById"
+          name="performedById"
+          required
+          class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-brand-700 focus:ring-2 focus:ring-brand-500/20"
+        >
+          <option value="">Select user</option>
+          {{#each users}}
+            <option value="{{this._id}}">{{this.email}}</option>
+          {{/each}}
+        </select>
+      </label>
+
+      <label class="block md:col-span-2">
+        <span class="text-sm font-medium text-slate-700">Reference document</span>
+        <input
+          id="document"
+          name="document"
+          type="file"
+          required
+          class="mt-1.5 w-full rounded-lg border border-dashed border-slate-300 bg-slate-50/50 px-3 py-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand-700 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-900"
+        />
+      </label>
+
+      <label class="block md:col-span-2">
+        <span class="text-sm font-medium text-slate-700">Note</span>
+        <textarea
+          id="note"
+          name="note"
+          rows="4"
+          class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-brand-700 focus:ring-2 focus:ring-brand-500/20"
+          placeholder="Optional context for this checkout"
+        ></textarea>
+      </label>
     </div>
 
-    <div>
-      <label class="mb-1 block text-sm font-medium text-slate-700" for="assigneeId">Assignee</label>
-      <select id="assigneeId" name="assigneeId" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">
-        <option value="">Select user</option>
-        {{#each users}}
-          <option value="{{this._id}}">{{this.email}}</option>
-        {{/each}}
-      </select>
-    </div>
-
-    <div>
-      <label class="mb-1 block text-sm font-medium text-slate-700" for="performedById">Processed by</label>
-      <select id="performedById" name="performedById" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">
-        <option value="">Select user</option>
-        {{#each users}}
-          <option value="{{this._id}}">{{this.email}}</option>
-        {{/each}}
-      </select>
-    </div>
-
-    <div>
-      <label class="mb-1 block text-sm font-medium text-slate-700" for="document">Reference document</label>
-      <input id="document" name="document" type="file" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" />
-    </div>
-
-    <div class="md:col-span-2">
-      <label class="mb-1 block text-sm font-medium text-slate-700" for="note">Note</label>
-      <textarea id="note" name="note" rows="3" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"></textarea>
-    </div>
-
-    <div class="md:col-span-2 flex flex-wrap gap-3">
-      <button type="submit" class="rounded-lg border border-sky-300 bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200">Check out item</button>
-      <a class="rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300" href="/items">Cancel</a>
+    <div class="flex flex-wrap gap-3 border-t border-slate-100 pt-6">
+      <button
+        type="submit"
+        class="rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-900"
+      >
+        Check out item
+      </button>
+      <a class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50" href="/items">Cancel</a>
     </div>
   </form>
 </section>

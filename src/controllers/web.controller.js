@@ -12,8 +12,18 @@ function uploadedDocumentPath(file) {
   return file ? `/documents/${file.filename}` : null;
 }
 
-function home(req, res) {
-  res.render('home', { title: 'Dashboard' });
+async function home(req, res, next) {
+  try {
+    const inventorySummary = await reportService.inventoryStatusSummary();
+    const maintenanceTotal = inventorySummary.byStatus?.Maintenance ?? 0;
+    res.render('home', {
+      title: 'Dashboard',
+      inventorySummary,
+      maintenanceTotal,
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 function loginForm(req, res) {
