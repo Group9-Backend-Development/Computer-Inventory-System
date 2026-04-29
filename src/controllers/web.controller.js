@@ -2,6 +2,7 @@ const itemService = require('../services/item.service');
 const transactionService = require('../services/transaction.service');
 const reportService = require('../services/report.service');
 const userService = require('../services/user.service');
+const bcrypt = require('bcrypt');
 
 function uploadedDocumentPath(file) {
   return file ? `/documents/${file.filename}` : null;
@@ -68,9 +69,9 @@ async function itemsCreate(req, res, next) {
       dateAcquired,
     });
 
-    res.redirect('/items');
+    return res.redirect('/items');
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
 
@@ -125,9 +126,9 @@ async function itemsUpdate(req, res, next) {
       return res.status(404).render('errors/not-found', { title: 'Item not found' });
     }
 
-    res.redirect(`/items/${req.params.id}`);
+    return res.redirect(`/items/${req.params.id}`);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
 
@@ -157,7 +158,7 @@ async function itemsDetail(req, res, next) {
   } catch (error) {
     next(error);
   }
-} 
+}
 
 async function itemsDelete(req, res, next) {
   try {
@@ -167,9 +168,9 @@ async function itemsDelete(req, res, next) {
       return res.status(404).render('errors/not-found', { title: 'Item not found' });
     }
 
-    res.redirect('/items');
+    return res.redirect('/items');
   } catch (error) {
-    next(error);
+    return next(error);
   }
 }
 
@@ -199,8 +200,51 @@ function usersNew(req, res) {
   res.render('users/form', {
     title: 'New user',
     user: null,
-    roles: ['admin', 'technician'],
   });
+}
+
+async function usersCreate(req, res, next) {
+  try {
+    const { email, password, role } = req.body;
+
+    if (!email || !password || !role) {
+      return res.status(400).render('users/form', {
+        title: 'New user',
+        user: { email, role },
+        error: 'Email, password, and role are required.',
+      });
+    }
+
+    if (!['admin', 'technician'].includes(role)) {
+      return res.status(400).render('users/form', {
+        title: 'New user',
+        user: { email, role },
+        error: 'Role must be admin or technician.',
+      });
+    }
+
+    const existingUser = await userService.findUserByEmail(email);
+
+    if (existingUser) {
+      return res.status(409).render('users/form', {
+        title: 'New user',
+        user: { email, role },
+        error: 'Email already exists.',
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await userService.createUser({
+      email,
+      passwordHash,
+      role,
+    });
+
+    return res.redirect('/users');
+  } catch (error) {
+    return next(error);
+  }
 }
 
 async function usersIndex(req, res, next) {
@@ -212,18 +256,39 @@ async function usersIndex(req, res, next) {
   }
 }
 
-async function usersCreate(req, res, next) {
+async function usersUpdateRole(req, res, next) {
   try {
-    await userService.createUser({
-      email: req.body.email,
-      password: req.body.password,
-      role: req.body.role,
-      isEnabled: req.body.isEnabled === 'on',
-    });
+    const { role } = req.body;
 
-    res.redirect('/users');
+    if (!role || !['admin', 'technician'].includes(role)) {
+      return res.status(400).render('errors/not-found', { title: 'Invalid role' });
+    }
+
+    const updatedUser = await userService.updateUserRole(req.params.id, role);
+
+    if (!updatedUser) {
+      return res.status(404).render('errors/not-found', { title: 'User not found' });
+    }
+
+    return res.redirect('/users');
   } catch (error) {
-    next(error);
+    return next(error);
+  }
+}
+
+async function usersUpdateStatus(req, res, next) {
+  try {
+    const isEnabled = req.body.isEnabled === 'true';
+
+    const updatedUser = await userService.updateUserStatus(req.params.id, isEnabled);
+
+    if (!updatedUser) {
+      return res.status(404).render('errors/not-found', { title: 'User not found' });
+    }
+
+    return res.redirect('/users');
+  } catch (error) {
+    return next(error);
   }
 }
 
@@ -325,8 +390,10 @@ module.exports = {
   itemsDelete,
   itemsHistory,
   usersNew,
-  usersIndex,
   usersCreate,
+  usersIndex,
+  usersUpdateRole,
+  usersUpdateStatus,
   keysIndex,
   reportsIndex,
   transactionsCheckout,

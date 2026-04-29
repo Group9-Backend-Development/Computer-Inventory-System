@@ -1,83 +1,133 @@
-const User = require('../models/User');
-const env = require('../config/env');
-const mockStore = require('../data/mockStore');
-const { hashPassword } = require('../utils/password');
+const supabase = require('../config/supabase');
 
-function publicUser(user) {
-  if (!user) {
+function mapUser(row) {
+  if (!row) {
     return null;
   }
 
   return {
-    _id: user._id || user.id,
-    id: user.id || user._id?.toString(),
-    email: user.email,
-    role: user.role,
-    isEnabled: user.isEnabled,
-    createdAt: user.createdAt,
+    id: row.id,
+    email: row.email,
+    role: row.role,
+    isEnabled: row.is_enabled,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
-async function listUsers() {
-  if (env.useMockData) {
-    return mockStore.clone(mockStore.users.map(publicUser));
-  }
+async function createUser({ email, passwordHash, role }) {
+  const payload = {
+    email,
+    password_hash: passwordHash,
+    role,
+    is_enabled: true,
+  };
 
-  const users = await User.find().sort({ email: 1 }).lean();
-  return users.map(publicUser);
-}
+  const { data, error } = await supabase
+    .from('users')
+    .insert(payload)
+    .select()
+    .single();
 
-async function findByEmail(email) {
-  const normalizedEmail = String(email || '').trim().toLowerCase();
-
-  if (env.useMockData) {
-    return mockStore.users.find((user) => user.email === normalizedEmail) || null;
-  }
-
-  return User.findOne({ email: normalizedEmail });
-}
-
-async function createUser({ email, password, role = 'technician', isEnabled = true }) {
-  const normalizedEmail = String(email || '').trim().toLowerCase();
-
-  if (!normalizedEmail || !password) {
-    const error = new Error('Email and password are required');
-    error.status = 400;
+  if (error) {
     throw error;
   }
 
-  if (env.useMockData) {
-    if (mockStore.users.some((user) => user.email === normalizedEmail)) {
-      const error = new Error('User email already exists');
-      error.status = 409;
-      throw error;
-    }
+  return mapUser(data);
+}
 
-    const user = {
-      _id: mockStore.nextId('user', mockStore.users),
-      id: mockStore.nextId('user', mockStore.users),
-      email: normalizedEmail,
-      passwordHash: await hashPassword(password),
-      role,
-      isEnabled,
-      createdAt: new Date().toISOString(),
-    };
-    mockStore.users.push(user);
-    return publicUser(user);
+async function findUserById(id) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
   }
 
-  const user = await User.create({
-    email: normalizedEmail,
-    passwordHash: await hashPassword(password),
-    role,
-    isEnabled,
-  });
-  return publicUser(user);
+  return mapUser(data);
+}
+
+async function findUserByEmail(email) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data
+    ? {
+        id: data.id,
+        email: data.email,
+        passwordHash: data.password_hash,
+        role: data.role,
+        isEnabled: data.is_enabled,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      }
+    : null;
+}
+
+async function updateUserRole(id, role) {
+  const { data, error } = await supabase
+    .from('users')
+    .update({
+      role,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapUser(data);
+}
+
+async function updateUserStatus(id, isEnabled) {
+  const { data, error } = await supabase
+    .from('users')
+    .update({
+      is_enabled: isEnabled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapUser(data);
+}
+
+async function listUsers() {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map(mapUser);
 }
 
 module.exports = {
-  createUser,
-  findByEmail,
   listUsers,
-  publicUser,
+  createUser,
+  findUserById,
+  findUserByEmail,
+  updateUserRole,
+  updateUserStatus,
 };

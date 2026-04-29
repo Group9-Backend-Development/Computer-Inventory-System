@@ -1,20 +1,60 @@
 <section class="space-y-4 rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
   <h1 class="text-2xl font-bold text-slate-800">{{title}}</h1>
-  <p class="text-slate-600">Admin-only user creation: email, password, role, enable/disable.</p>
-  <form class="grid gap-4 md:grid-cols-2" method="post" action="/users">
-    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" name="email" placeholder="Email" required type="email" />
-    <input class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" name="password" placeholder="Password" required type="password" />
-    <select class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800" name="role">
-      {{#each roles}}
-        <option value="{{this}}">{{this}}</option>
-      {{/each}}
-    </select>
-    <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
-      <input class="h-4 w-4 rounded border-slate-300 text-sky-600" name="isEnabled" type="checkbox" checked />
-      Enabled
-    </label>
-    <div class="md:col-span-2">
-      <button class="rounded-lg border border-sky-300 bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200" type="submit">Create user</button>
+  <p class="text-slate-600">Admin-only user creation: email, password, and role.</p>
+
+  <form method="POST" action="/users" class="space-y-4">
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Email</label>
+        <input
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          type="email"
+          name="email"
+          value="{{user.email}}"
+          placeholder="user@example.com"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Password</label>
+        <input
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          type="password"
+          name="password"
+          placeholder="Enter password"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Role</label>
+        <select
+          class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800"
+          name="role"
+          required
+        >
+          <option value="">Select role</option>
+          <option value="admin">Admin</option>
+          <option value="technician">Technician</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button
+        type="submit"
+        class="rounded-lg border border-sky-300 bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200"
+      >
+        Create User
+      </button>
+
+      <a
+        href="/users"
+        class="rounded-lg border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300"
+      >
+        Cancel
+      </a>
     </div>
   </form>
 </section>

@@ -1,25 +1,59 @@
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const userService = require('../services/user.service');
-const { comparePassword } = require('../utils/password');
-const { signAccessToken } = require('../utils/jwt');
 
 async function login(req, res, next) {
   try {
     const { email, password } = req.body;
-    const user = await userService.findByEmail(email);
 
-    if (!user || !user.isEnabled) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    if (!email || !password) {
+      return res.status(400).json({
+        error: 'email and password are required',
+      });
     }
 
-    const passwordMatches = await comparePassword(password || '', user.passwordHash);
+    const user = await userService.findUserByEmail(email);
+
+    if (!user) {
+      return res.status(401).json({
+        error: 'Invalid email or password',
+      });
+    }
+
+    if (!user.isEnabled) {
+      return res.status(403).json({
+        error: 'Account is disabled',
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+
     if (!passwordMatches) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({
+        error: 'Invalid email or password',
+      });
     }
 
-    const token = signAccessToken({ sub: user.id || user._id.toString(), role: user.role });
+    const token = jwt.sign(
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN || '8h',
+      }
+    );
+
     return res.json({
       token,
-      user: userService.publicUser(user),
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        isEnabled: user.isEnabled,
+      },
     });
   } catch (error) {
     return next(error);
