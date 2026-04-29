@@ -15,6 +15,19 @@ function mapUser(row) {
   };
 }
 
+async function listUsers() {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map(mapUser);
+}
+
 async function createUser({ email, passwordHash, role }) {
   const payload = {
     email,
@@ -108,19 +121,6 @@ async function updateUserStatus(id, isEnabled) {
   }
 
   return mapUser(data);
-}
-
-async function listUsers() {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw error;
-  }
-
-  return data.map(mapUser);
 }
 
 module.exports = {

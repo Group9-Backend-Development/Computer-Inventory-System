@@ -2,7 +2,7 @@
   "name": "computer-inventory-system",
   "version": "0.1.0",
   "private": true,
-  "description": "INF 653 — Computer Inventory System (Express, Handlebars, MongoDB)",
+  "description": "INF 653 — Computer Inventory System (Express, Handlebars, Supabase)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
