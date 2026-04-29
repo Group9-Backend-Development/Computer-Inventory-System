@@ -1,6 +1,6 @@
-const Item = require('../models/Item');
 const env = require('../config/env');
 const mockStore = require('../data/mockStore');
+const itemService = require('./item.service');
 
 async function inventoryStatusSummary() {
   if (env.useMockData) {
@@ -19,19 +19,26 @@ async function inventoryStatusSummary() {
     };
   }
 
-  const items = await Item.find({ isDeleted: false }).select('status').lean();
-  const summary = { total: items.length, byStatus: {} };
-  for (const row of items) {
-    summary.byStatus[row.status] = (summary.byStatus[row.status] || 0) + 1;
+  const items = await itemService.listActiveItems();
+  const byStatus = {};
+
+  for (const item of items) {
+    byStatus[item.status] = (byStatus[item.status] || 0) + 1;
   }
-  return summary;
+
+  return {
+    total: items.length,
+    deployed: byStatus['In-Use'] || 0,
+    available: byStatus.Available || 0,
+    byStatus,
+  };
 }
 
 async function listAssetsOlderThanThreeYears() {
-  if (env.useMockData) {
-    const cutoff = new Date();
-    cutoff.setFullYear(cutoff.getFullYear() - 3);
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - 3);
 
+  if (env.useMockData) {
     return mockStore.clone(
       mockStore.items
         .filter((item) => !item.isDeleted && item.dateAcquired && new Date(item.dateAcquired) < cutoff)
@@ -39,14 +46,11 @@ async function listAssetsOlderThanThreeYears() {
     );
   }
 
-  const cutoff = new Date();
-  cutoff.setFullYear(cutoff.getFullYear() - 3);
-  return Item.find({
-    isDeleted: false,
-    dateAcquired: { $lt: cutoff },
-  })
-    .sort({ dateAcquired: 1 })
-    .lean();
+  const items = await itemService.listActiveItems();
+
+  return items
+    .filter((item) => item.dateAcquired && new Date(item.dateAcquired) < cutoff)
+    .sort((a, b) => new Date(a.dateAcquired) - new Date(b.dateAcquired));
 }
 
 module.exports = {

@@ -1,6 +1,7 @@
 const crypto = require('crypto');
-const ApiKey = require('../models/ApiKey');
-const User = require('../models/User');
+const env = require('../config/env');
+const mockStore = require('../data/mockStore');
+const supabase = require('../config/supabase');
 
 function hashKey(rawKey) {
   return crypto.createHash('sha256').update(rawKey).digest('hex');
@@ -13,15 +14,48 @@ async function validateApiKey(req, res, next) {
       return res.status(401).json({ error: 'Missing API key' });
     }
     const keyHash = hashKey(raw.trim());
-    const record = await ApiKey.findOne({ keyHash, isRevoked: false });
+
+    if (env.useMockData) {
+      const record = mockStore.apiKeys.find((k) => k.keyHash === keyHash && !k.isRevoked);
+      if (!record) {
+        return res.status(401).json({ error: 'Invalid API key' });
+      }
+      const creator = mockStore.users.find((u) => u.id === record.createdBy || u._id === record.createdBy);
+      if (!creator || !creator.isEnabled) {
+        return res.status(401).json({ error: 'API key owner is disabled' });
+      }
+      req.apiKey = { id: String(record.id) };
+      return next();
+    }
+
+    const { data: record, error: keyErr } = await supabase
+      .from('api_keys')
+      .select('id, created_by_id, is_revoked')
+      .eq('key_hash', keyHash)
+      .eq('is_revoked', false)
+      .maybeSingle();
+
+    if (keyErr) {
+      throw keyErr;
+    }
     if (!record) {
       return res.status(401).json({ error: 'Invalid API key' });
     }
-    const creator = await User.findById(record.createdBy);
-    if (!creator || !creator.isEnabled) {
+
+    const { data: creator, error: userErr } = await supabase
+      .from('users')
+      .select('id, is_enabled')
+      .eq('id', record.created_by_id)
+      .maybeSingle();
+
+    if (userErr) {
+      throw userErr;
+    }
+    if (!creator || !creator.is_enabled) {
       return res.status(401).json({ error: 'API key owner is disabled' });
     }
-    req.apiKey = { id: record._id.toString() };
+
+    req.apiKey = { id: record.id };
     return next();
   } catch (err) {
     return next(err);
