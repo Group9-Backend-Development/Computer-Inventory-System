@@ -1,10 +1,10 @@
-const crypto = require('crypto');
 const env = require('../config/env');
 const mockStore = require('../data/mockStore');
 const supabase = require('../config/supabase');
+const { hashApiKey } = require('../utils/apiKeyHash');
 
 function hashKey(rawKey) {
-  return crypto.createHash('sha256').update(rawKey).digest('hex');
+  return hashApiKey(rawKey);
 }
 
 async function validateApiKey(req, res, next) {
@@ -30,7 +30,7 @@ async function validateApiKey(req, res, next) {
 
     const { data: record, error: keyErr } = await supabase
       .from('api_keys')
-      .select('id, created_by_id, is_revoked')
+      .select('id, created_by_id')
       .eq('key_hash', keyHash)
       .eq('is_revoked', false)
       .maybeSingle();

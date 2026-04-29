@@ -1,7 +1,7 @@
 const express = require('express');
 const webController = require('../controllers/web.controller');
 const { uploadSingle } = require('../middleware/upload');
-const { redirectIfLoggedIn, requireWebAuth } = require('../middleware/webAuth');
+const { redirectIfLoggedIn, requireWebAuth, requireWebAdmin } = require('../middleware/webAuth');
 
 const router = express.Router();
 
@@ -29,7 +29,10 @@ router.post('/users', webController.usersCreate);
 router.post('/users/:id/role', webController.usersUpdateRole);
 router.post('/users/:id/status', webController.usersUpdateStatus);
 
-router.get('/keys', webController.keysIndex);
+router.post('/keys/generate', requireWebAdmin, webController.keysGenerate);
+router.post('/keys/:id/revoke', requireWebAdmin, webController.keysRevoke);
+router.get('/keys', requireWebAdmin, webController.keysIndex);
+
 router.get('/reports', webController.reportsIndex);
 
 router.get('/transactions/checkout', webController.transactionsCheckout);

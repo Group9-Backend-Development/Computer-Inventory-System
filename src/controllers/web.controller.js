@@ -1,10 +1,12 @@
 const itemService = require('../services/item.service');
 const transactionService = require('../services/transaction.service');
 const reportService = require('../services/report.service');
+const apiKeyService = require('../services/apiKey.service');
 const userService = require('../services/user.service');
 const { comparePassword, hashPassword } = require('../utils/password');
 const { signAccessToken } = require('../utils/jwt');
 const { setAuthCookie, clearAuthCookie, safeNextPath } = require('../middleware/webAuth');
+const { storePlaintextOnce, takePlaintext } = require('../utils/pendingApiKeyReveal');
 
 function uploadedDocumentPath(file) {
   return file ? `/documents/${file.filename}` : null;
@@ -73,16 +75,17 @@ function logout(req, res) {
 
 async function itemsIndex(req, res, next) {
   try {
-    const items = await itemService.listActiveItems();
+    const allItems = await itemService.listActiveItems();
     const selectedStatus = req.query.status || '';
 
     const filteredItems = selectedStatus
-      ? items.filter((item) => item.status === selectedStatus)
-      : items;
+      ? allItems.filter((item) => item.status === selectedStatus)
+      : allItems;
 
     res.render('items/index', {
       title: 'Inventory items',
       items: filteredItems,
+      totalCount: allItems.length,
       selectedStatus,
       statuses: ['Available', 'In-Use', 'Maintenance', 'Retired'],
     });
@@ -348,8 +351,71 @@ async function usersUpdateStatus(req, res, next) {
   }
 }
 
-function keysIndex(req, res) {
-  res.render('keys/index', { title: 'API keys', keys: [] });
+function mapKeysForView(rows) {
+  return rows.map((k) => {
+    const isRevoked = k.status === 'revoked';
+
+    const revokedAtLabel =
+      isRevoked && k.updatedAt
+        ? new Date(k.updatedAt).toLocaleString(undefined, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })
+        : '';
+
+    return {
+      ...k,
+      statusLabel: isRevoked ? 'Revoked' : 'Active',
+      createdAtLabel: k.createdAt
+        ? new Date(k.createdAt).toLocaleString(undefined, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })
+        : '',
+      revokedAtLabel,
+      isRevokedUi: isRevoked,
+    };
+  });
+}
+
+async function keysIndex(req, res, next) {
+  try {
+    const rows = await apiKeyService.listKeys();
+    let newPlainKey = null;
+    const reveal = typeof req.query.reveal === 'string' ? req.query.reveal.trim() : '';
+    if (reveal) {
+      newPlainKey = takePlaintext(reveal);
+    }
+
+    res.render('keys/index', {
+      title: 'API keys',
+      keys: mapKeysForView(rows),
+      newPlainKey,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function keysGenerate(req, res, next) {
+  try {
+    const raw = req.body?.label;
+    const label = typeof raw === 'string' && raw.trim() ? raw.trim() : null;
+    const created = await apiKeyService.createKey(res.locals.currentUser.id, label);
+    const token = storePlaintextOnce(created.plaintextKey);
+    return res.redirect(303, `/keys?reveal=${encodeURIComponent(token)}`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function keysRevoke(req, res, next) {
+  try {
+    await apiKeyService.revokeKey(req.params.id);
+    res.redirect('/keys');
+  } catch (err) {
+    next(err);
+  }
 }
 
 async function reportsIndex(req, res, next) {
@@ -453,6 +519,8 @@ module.exports = {
   usersUpdateRole,
   usersUpdateStatus,
   keysIndex,
+  keysGenerate,
+  keysRevoke,
   reportsIndex,
   transactionsCheckout,
   transactionsCheckin,

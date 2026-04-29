@@ -97,12 +97,28 @@ function requireWebAuth(req, res, next) {
   return res.redirect(qs);
 }
 
+function requireWebAdmin(req, res, next) {
+  if (!res.locals.currentUser) {
+    const dest = req.originalUrl || req.url || '/';
+    return res.redirect(`/login?next=${encodeURIComponent(dest)}`);
+  }
+  if (res.locals.currentUser.role !== 'admin') {
+    return res.status(403).render('errors/error', {
+      title: 'Access denied',
+      status: 403,
+      message: 'This page is only available to administrators.',
+    });
+  }
+  return next();
+}
+
 module.exports = {
   COOKIE_NAME,
   clearAuthCookie,
   loadWebUser,
   redirectIfLoggedIn,
   requireWebAuth,
+  requireWebAdmin,
   safeNextPath,
   setAuthCookie,
 };
