@@ -7,6 +7,7 @@ const cors = require('cors');
 
 // const { globalLimiter } = require('./middleware/rateLimiter');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { navSectionMiddleware } = require('./middleware/navSection');
 const { uploadDir } = require('./middleware/upload');
 
 const authRoutes = require('./routes/auth.routes');
@@ -43,6 +44,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(publicPath));
 app.use('/documents', express.static(uploadDir));
+
+app.use(navSectionMiddleware);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);

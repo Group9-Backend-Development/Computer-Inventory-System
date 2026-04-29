@@ -1,3 +1,4 @@
+{{!-- Active: border-sky-300 bg-sky-100; inactive: hover states --}}
 <aside class="w-full border-b border-sky-200 bg-white/95 p-4 backdrop-blur lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r lg:p-5">
   <a class="mb-6 inline-flex items-center gap-3" href="/">
     <img src="/images/logo.png" alt="Computer Inventory logo" class="h-11 w-11 rounded-full border border-sky-300 bg-white object-contain p-1" />
@@ -8,13 +9,13 @@
   </a>
 
   <nav class="grid grid-cols-2 gap-2 text-sm font-medium lg:grid-cols-1" aria-label="Primary">
-    <a class="rounded-lg border border-transparent px-3 py-2 text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700" href="/">Home</a>
-    <a class="rounded-lg border border-transparent px-3 py-2 text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700" href="/items">Items</a>
-    <a class="rounded-lg border border-transparent px-3 py-2 text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700" href="/transactions/checkout">Check out</a>
-    <a class="rounded-lg border border-transparent px-3 py-2 text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700" href="/transactions/checkin">Check in</a>
-    <a class="rounded-lg border border-transparent px-3 py-2 text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700" href="/reports">Reports</a>
-    <a class="rounded-lg border border-transparent px-3 py-2 text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700" href="/users">Users</a>
-    <a class="rounded-lg border border-transparent px-3 py-2 text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700" href="/keys">API keys</a>
-    <a class="rounded-lg border border-sky-300 bg-sky-100 px-3 py-2 text-sky-700 transition hover:bg-sky-200" href="/login">Sign in</a>
+    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'home')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'home')}}aria-current="page"{{/if}} href="/">Home</a>
+    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'items')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'items')}}aria-current="page"{{/if}} href="/items">Items</a>
+    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'checkout')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'checkout')}}aria-current="page"{{/if}} href="/transactions/checkout">Check out</a>
+    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'checkin')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'checkin')}}aria-current="page"{{/if}} href="/transactions/checkin">Check in</a>
+    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'reports')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'reports')}}aria-current="page"{{/if}} href="/reports">Reports</a>
+    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'users')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'users')}}aria-current="page"{{/if}} href="/users">Users</a>
+    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'keys')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'keys')}}aria-current="page"{{/if}} href="/keys">API keys</a>
+    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'login')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'login')}}aria-current="page"{{/if}} href="/login">Sign in</a>
   </nav>
 </aside>
