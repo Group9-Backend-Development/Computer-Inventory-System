@@ -15,9 +15,74 @@
     </article>
     <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
       <h2 class="font-semibold text-sky-700">User audit</h2>
-      <p class="mt-1 text-sm text-slate-600">Review active devices assigned per user and role.</p>
+      <p class="mt-2 text-3xl font-bold text-slate-800">{{auditItems.length}}</p>
+      <p class="text-sm text-slate-600">Assets assigned to selected user</p>
     </article>
   </div>
+
+  <section class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+    <div>
+      <h2 class="font-semibold text-slate-800">User audit</h2>
+      <p class="mt-1 text-sm text-slate-600">Retrieve assets currently associated with a user profile.</p>
+    </div>
+    <form method="GET" action="/reports" class="flex flex-wrap items-end gap-3">
+      <div class="min-w-64 flex-1">
+        <label class="mb-1 block text-sm font-medium text-slate-700" for="userId">User profile</label>
+        <select id="userId" name="userId" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">
+          <option value="">Select user</option>
+          {{#each users}}
+            <option value="{{this._id}}" {{#if (eq ../selectedUserId this._id)}}selected{{/if}}>{{this.email}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <button type="submit" class="rounded-lg border border-sky-300 bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200">Run audit</button>
+      {{#if selectedUserId}}
+        <a class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300" href="/reports">Clear</a>
+      {{/if}}
+    </form>
+
+    {{#if selectedUserId}}
+      <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-slate-600">
+            <tr>
+              <th class="px-4 py-3 font-semibold">Assigned asset</th>
+              <th class="px-4 py-3 font-semibold">Brand / model</th>
+              <th class="px-4 py-3 font-semibold">Checked out</th>
+              <th class="px-4 py-3 font-semibold">Document</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {{#if auditItems.length}}
+              {{#each auditItems}}
+                <tr>
+                  <td class="px-4 py-3 text-slate-800">
+                    <a class="font-medium text-sky-700 hover:underline" href="/items/{{_id}}">{{itemId}}</a>
+                  </td>
+                  <td class="px-4 py-3 text-slate-700">{{brand}} {{model}}</td>
+                  <td class="px-4 py-3 text-slate-700">{{checkedOutAtLabel}}</td>
+                  <td class="px-4 py-3 text-slate-700">
+                    {{#if checkoutDocumentUrl}}
+                      <a class="text-sky-700 hover:underline" href="{{checkoutDocumentUrl}}" target="_blank" rel="noopener">{{checkoutDocumentName}}</a>
+                    {{else}}
+                      None
+                    {{/if}}
+                  </td>
+                </tr>
+              {{/each}}
+            {{else}}
+              <tr>
+                <td colspan="4" class="px-4 py-6 text-center text-slate-500">
+                  {{#if selectedAuditUser}}{{selectedAuditUser.email}} has no currently assigned assets.{{else}}No user found for this audit.{{/if}}
+                </td>
+              </tr>
+            {{/if}}
+          </tbody>
+        </table>
+      </div>
+    {{/if}}
+  </section>
+
   <div class="overflow-hidden rounded-lg border border-slate-200">
     <table class="w-full text-left text-sm">
       <thead class="bg-slate-50 text-slate-600">

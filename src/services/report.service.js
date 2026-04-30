@@ -1,6 +1,7 @@
 const env = require('../config/env');
 const mockStore = require('../data/mockStore');
 const itemService = require('./item.service');
+const transactionService = require('./transaction.service');
 
 async function inventoryStatusSummary() {
   if (env.useMockData) {
@@ -53,7 +54,37 @@ async function listAssetsOlderThanThreeYears() {
     .sort((a, b) => new Date(a.dateAcquired) - new Date(b.dateAcquired));
 }
 
+async function listCurrentAssetsForUser(userId) {
+  if (!userId) {
+    return [];
+  }
+
+  const items = await itemService.listActiveItems();
+  const inUseItems = items.filter((item) => item.status === 'In-Use');
+  const assignedItems = [];
+
+  for (const item of inUseItems) {
+    const history = await transactionService.listHistoryForItem(item._id);
+    const openCheckout = transactionService.getOpenCheckout(history);
+
+    if (openCheckout?.assigneeId === userId) {
+      assignedItems.push({
+        ...item,
+        assigneeId: openCheckout.assigneeId,
+        assigneeName: openCheckout.assigneeName,
+        checkedOutAt: openCheckout.createdAt,
+        checkedOutAtLabel: openCheckout.createdAtLabel,
+        checkoutDocumentUrl: openCheckout.documentUrl,
+        checkoutDocumentName: openCheckout.documentName,
+      });
+    }
+  }
+
+  return assignedItems.sort((a, b) => a.itemId.localeCompare(b.itemId));
+}
+
 module.exports = {
   inventoryStatusSummary,
   listAssetsOlderThanThreeYears,
+  listCurrentAssetsForUser,
 };

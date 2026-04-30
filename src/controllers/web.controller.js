@@ -420,15 +420,25 @@ async function keysRevoke(req, res, next) {
 
 async function reportsIndex(req, res, next) {
   try {
+    const selectedUserId = typeof req.query.userId === 'string' ? req.query.userId.trim() : '';
     const [inventorySummary, agingItems] = await Promise.all([
       reportService.inventoryStatusSummary(),
       reportService.listAssetsOlderThanThreeYears(),
     ]);
+    const users = await transactionService.listUsers();
+    const auditItems = selectedUserId
+      ? await reportService.listCurrentAssetsForUser(selectedUserId)
+      : [];
+    const selectedAuditUser = users.find((user) => user._id === selectedUserId) || null;
 
     res.render('reports/index', {
       title: 'Reports',
       inventorySummary,
       agingItems,
+      users,
+      selectedUserId,
+      selectedAuditUser,
+      auditItems,
     });
   } catch (error) {
     next(error);
