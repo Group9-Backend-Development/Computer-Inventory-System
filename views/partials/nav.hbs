@@ -1,33 +1,95 @@
-{{!-- Active: border-sky-300 bg-sky-100; inactive: hover states --}}
-<aside class="w-full border-b border-sky-200 bg-white/95 p-4 backdrop-blur lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r lg:p-5">
-  <a class="mb-6 inline-flex items-center gap-3" href="/">
-    <img src="/images/logo.png" alt="Computer Inventory logo" class="h-11 w-11 rounded-full border border-sky-300 bg-white object-contain p-1" />
-    <span class="grid leading-tight">
-      <strong class="text-base font-bold text-slate-800">Computer Inventory</strong>
-      <small class="text-[11px] font-medium uppercase tracking-wider text-sky-600">Dashboard</small>
-    </span>
-  </a>
+<aside
+  class="sticky top-0 z-40 w-full border-b border-slate-200/90 bg-white/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/90 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:h-screen lg:w-72 lg:flex-col lg:overflow-y-auto lg:border-b-0 lg:border-r lg:border-slate-200 lg:bg-white lg:p-5 lg:shadow-none"
+>
+  <input id="main-nav-drawer" type="checkbox" class="peer sr-only" />
+
+  <div class="flex items-center gap-3 px-4 py-4 lg:block lg:px-0 lg:py-0">
+    <a class="inline-flex min-w-0 flex-1 items-center gap-3" href="/">
+      <img
+        src="/images/logo.png"
+        alt=""
+        class="h-11 w-11 shrink-0 rounded-full border border-slate-200 bg-white object-contain p-1"
+        width="44"
+        height="44"
+      />
+      <span class="grid min-w-0 leading-tight">
+        <strong class="truncate text-base font-bold text-slate-900">Computer Inventory</strong>
+        <small class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Operations</small>
+      </span>
+    </a>
+    {{#if currentUser}}
+      <span class="max-w-[45%] truncate text-xs text-slate-500 lg:hidden" title="{{currentUser.email}}">{{currentUser.email}}</span>
+    {{/if}}
+    <label
+      for="main-nav-drawer"
+      class="ml-auto flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 lg:hidden"
+    >
+      <span class="sr-only">Toggle primary navigation</span>
+      <span aria-hidden="true">Menu</span>
+    </label>
+  </div>
 
   {{#if currentUser}}
-    <p class="mb-4 truncate text-xs text-slate-500" title="{{currentUser.email}}">{{currentUser.email}}</p>
+    <p class="hidden truncate px-4 pb-2 text-xs text-slate-500 lg:block lg:px-0 lg:pb-4" title="{{currentUser.email}}">{{currentUser.email}}</p>
   {{/if}}
 
-  <nav class="grid grid-cols-2 gap-2 text-sm font-medium lg:grid-cols-1" aria-label="Primary">
+  <nav
+    id="navigation-primary"
+    aria-label="Primary"
+    class="hidden flex-col gap-1 border-t border-slate-200 bg-white px-4 pb-5 pt-2 peer-checked:flex lg:flex lg:border-t-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-0"
+  >
     {{#if currentUser}}
-    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'home')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'home')}}aria-current="page"{{/if}} href="/">Home</a>
-    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'items')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'items')}}aria-current="page"{{/if}} href="/items">Items</a>
-    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'checkout')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'checkout')}}aria-current="page"{{/if}} href="/transactions/checkout">Check out</a>
-    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'checkin')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'checkin')}}aria-current="page"{{/if}} href="/transactions/checkin">Check in</a>
-    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'reports')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'reports')}}aria-current="page"{{/if}} href="/reports">Reports</a>
-    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'users')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'users')}}aria-current="page"{{/if}} href="/users">Users</a>
-    {{#if (eq currentUser.role 'admin')}}
-    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'keys')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'keys')}}aria-current="page"{{/if}} href="/keys">API keys</a>
-    {{/if}}
-    <form method="post" action="/logout" class="col-span-2 lg:col-span-1">
-      <button type="submit" class="w-full rounded-lg border border-transparent px-3 py-2 text-left text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700 lg:text-sm">Sign out</button>
-    </form>
+      <a
+        class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'home')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
+        {{#if (eq navSection 'home')}}aria-current="page"{{/if}}
+        href="/"
+      >Home</a>
+      <a
+        class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'items')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
+        {{#if (eq navSection 'items')}}aria-current="page"{{/if}}
+        href="/items"
+      >Inventory items</a>
+      <a
+        class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'checkout')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
+        {{#if (eq navSection 'checkout')}}aria-current="page"{{/if}}
+        href="/transactions/checkout"
+      >Check out</a>
+      <a
+        class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'checkin')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
+        {{#if (eq navSection 'checkin')}}aria-current="page"{{/if}}
+        href="/transactions/checkin"
+      >Check in</a>
+      <a
+        class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'reports')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
+        {{#if (eq navSection 'reports')}}aria-current="page"{{/if}}
+        href="/reports"
+      >Reports</a>
+      <a
+        class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'users')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
+        {{#if (eq navSection 'users')}}aria-current="page"{{/if}}
+        href="/users"
+      >Users</a>
+      {{#if (eq currentUser.role 'admin')}}
+        <a
+          class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'keys')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
+          {{#if (eq navSection 'keys')}}aria-current="page"{{/if}}
+          href="/keys"
+        >API keys</a>
+      {{/if}}
+      <form method="post" action="/logout" class="pt-1">
+        <button
+          type="submit"
+          class="w-full rounded-lg border border-transparent px-3 py-2.5 text-left text-sm font-medium text-slate-600 transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+        >
+          Sign out
+        </button>
+      </form>
     {{else}}
-    <a class="rounded-lg border px-3 py-2 transition {{#if (eq navSection 'login')}}border-sky-300 bg-sky-100 font-semibold text-sky-800 shadow-sm{{else}}border-transparent text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700{{/if}}" {{#if (eq navSection 'login')}}aria-current="page"{{/if}} href="/login">Sign in</a>
+      <a
+        class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'login')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
+        {{#if (eq navSection 'login')}}aria-current="page"{{/if}}
+        href="/login"
+      >Sign in</a>
     {{/if}}
   </nav>
 </aside>

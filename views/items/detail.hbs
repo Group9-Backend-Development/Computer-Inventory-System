@@ -1,78 +1,137 @@
-<section class="space-y-4 rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
-  <h1 class="text-2xl font-bold text-slate-800">{{title}}</h1>
+<section class="space-y-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+  <nav class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-500" aria-label="Breadcrumb">
+    <a class="font-medium text-brand-700 hover:underline" href="/items">Inventory</a>
+    <span aria-hidden="true">/</span>
+    <span class="font-mono font-medium text-slate-700">{{item.itemId}}</span>
+  </nav>
 
-  <div class="grid gap-4 md:grid-cols-2 text-slate-700">
-    <div><strong>Item ID:</strong> {{item.itemId}}</div>
-    <div><strong>Serial Number:</strong> {{item.serialNumber}}</div>
-    <div><strong>Brand:</strong> {{item.brand}}</div>
-    <div><strong>Model:</strong> {{item.model}}</div>
-    <div><strong>Classification:</strong> {{item.classification}}</div>
-    <div><strong>Category:</strong> {{item.category}}</div>
-    <div><strong>Status:</strong> {{item.status}}</div>
-    <div><strong>Date Acquired:</strong> {{item.dateAcquired}}</div>
-  </div>
+  <header class="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Asset detail</p>
+      <h1 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{{title}}</h1>
+      <p class="mt-2 max-w-xl text-sm text-slate-600">
+        Specifications, current assignment context, recent transactions, and full usage history for this catalog line.
+      </p>
+    </div>
+    <div class="shrink-0">
+      {{#if (eq item.status "Available")}}
+        <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80">{{item.status}}</span>
+      {{else}}
+        {{#if (eq item.status "In-Use")}}
+          <span class="inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800 ring-1 ring-sky-200/80">{{item.status}}</span>
+        {{else}}
+          {{#if (eq item.status "Maintenance")}}
+            <span class="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200/80">{{item.status}}</span>
+          {{else}}
+            {{#if (eq item.status "Retired")}}
+              <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">{{item.status}}</span>
+            {{else}}
+              <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">{{item.status}}</span>
+            {{/if}}
+          {{/if}}
+        {{/if}}
+      {{/if}}
+    </div>
+  </header>
+
+  <dl class="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+      <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Item ID</dt>
+      <dd class="mt-1 font-mono text-sm font-semibold text-slate-900">{{item.itemId}}</dd>
+    </div>
+    <div class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+      <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Serial</dt>
+      <dd class="mt-1 break-all font-mono text-sm text-slate-900">{{item.serialNumber}}</dd>
+    </div>
+    <div class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+      <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Brand</dt>
+      <dd class="mt-1 text-sm font-medium text-slate-900">{{item.brand}}</dd>
+    </div>
+    <div class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+      <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Model</dt>
+      <dd class="mt-1 text-sm font-medium text-slate-900">{{item.model}}</dd>
+    </div>
+    <div class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+      <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Classification</dt>
+      <dd class="mt-1 text-sm text-slate-900">{{item.classification}}</dd>
+    </div>
+    <div class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+      <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Category</dt>
+      <dd class="mt-1 text-sm text-slate-900">{{item.category}}</dd>
+    </div>
+    <div class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+      <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Date acquired</dt>
+      <dd class="mt-1 text-sm text-slate-900">{{item.dateAcquired}}</dd>
+    </div>
+    <div class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+      <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Lifecycle status</dt>
+      <dd class="mt-1 text-sm text-slate-900">{{item.status}}</dd>
+    </div>
+  </dl>
 
   {{#if currentAssignment}}
-    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-      <strong>Current assignee:</strong> {{currentAssignment.assigneeName}}
-      <span class="mx-2 text-amber-400">·</span>
-      Checked out {{currentAssignment.checkedOutAt}}
-      <span class="mx-2 text-amber-400">·</span>
-      {{currentAssignment.durationLabel}}
+    <div class="rounded-xl border border-amber-200/90 bg-gradient-to-br from-amber-50 to-amber-50/60 px-4 py-4 sm:px-5">
+      <p class="text-xs font-semibold uppercase tracking-wide text-amber-900/90">Currently checked out</p>
+      <p class="mt-2 text-sm text-amber-950">
+        <strong class="font-semibold">{{currentAssignment.assigneeName}}</strong>
+        <span class="text-amber-800/70">.</span>
+        Started {{currentAssignment.checkedOutAt}}
+        <span class="text-amber-800/70">.</span>
+        {{currentAssignment.durationLabel}}
+      </p>
     </div>
   {{/if}}
 
-  <div class="grid gap-4 lg:grid-cols-2">
-    <section class="space-y-3">
-      <h2 class="text-lg font-semibold text-slate-800">Recent transactions</h2>
-      <ol class="space-y-2">
+  <div class="grid gap-8 lg:grid-cols-2">
+    <section class="space-y-4" aria-labelledby="recent-transactions-heading">
+      <div class="flex items-end justify-between gap-2 border-b border-slate-100 pb-2">
+        <h2 id="recent-transactions-heading" class="text-lg font-semibold text-slate-900">Recent transactions</h2>
+      </div>
+      <ul class="space-y-3">
         {{#if recentTransactions.length}}
           {{#each recentTransactions}}
-            <li class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-              <div class="font-semibold capitalize">{{this.type}} · {{this.createdAtLabel}}</div>
-              <div>Assignee: {{this.assigneeName}}</div>
+            <li class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:border-slate-300">
+              <div class="font-semibold capitalize text-slate-900">{{this.type}} <span class="font-normal text-slate-400">/</span> {{this.createdAtLabel}}</div>
+              <div class="mt-1 text-sm text-slate-600">Assignee: {{this.assigneeName}}</div>
               {{#if this.documentUrl}}
-                <a class="text-sky-700 hover:underline" href="{{this.documentUrl}}" target="_blank" rel="noopener">{{this.documentName}}</a>
+                <a class="mt-2 inline-flex text-sm font-medium text-brand-700 underline-offset-4 hover:underline" href="{{this.documentUrl}}" target="_blank" rel="noopener noreferrer">{{this.documentName}}</a>
               {{/if}}
             </li>
           {{/each}}
         {{else}}
-          <li class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">No transactions yet.</li>
+          <li class="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">No transactions logged yet.</li>
         {{/if}}
-      </ol>
+      </ul>
     </section>
 
-    <section class="space-y-3">
-      <h2 class="text-lg font-semibold text-slate-800">Usage history</h2>
-      <ol class="space-y-2">
+    <section class="space-y-4" aria-labelledby="usage-history-heading">
+      <div class="flex items-end justify-between gap-2 border-b border-slate-100 pb-2">
+        <h2 id="usage-history-heading" class="text-lg font-semibold text-slate-900">Assignment history</h2>
+      </div>
+      <ul class="space-y-3">
         {{#if assignments.length}}
           {{#each assignments}}
-            <li class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-              <div class="font-semibold">{{this.assigneeName}} · {{this.statusLabel}}</div>
-              <div>{{this.checkedOutAt}} to {{#if this.checkedInAt}}{{this.checkedInAt}}{{else}}now{{/if}}</div>
-              <div class="text-slate-500">{{this.durationLabel}}</div>
+            <li class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <div class="font-semibold text-slate-900">{{this.assigneeName}} <span class="font-normal text-slate-400">/</span> {{this.statusLabel}}</div>
+              <div class="mt-1 text-sm text-slate-600">{{this.checkedOutAt}} to {{#if this.checkedInAt}}{{this.checkedInAt}}{{else}}present{{/if}}</div>
+              <div class="mt-1 text-xs text-slate-500">{{this.durationLabel}}</div>
             </li>
           {{/each}}
         {{else}}
-          <li class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">No assignment history yet.</li>
+          <li class="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">No assignment history recorded.</li>
         {{/if}}
-      </ol>
+      </ul>
     </section>
   </div>
 
-  <div class="flex flex-wrap gap-3">
-    <a class="rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300" href="/items/{{item._id}}/history">View history</a>
-    <a class="rounded-lg border border-sky-300 bg-sky-100 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-200" href="/items/{{item._id}}/edit">Edit item</a>
-
-    <form method="POST" action="/items/{{item._id}}/delete">
-      <button
-        type="submit"
-        class="rounded-lg border border-red-300 bg-red-100 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-200"
-      >
-        Delete item
+  <footer class="flex flex-wrap gap-3 border-t border-slate-100 pt-6">
+    <a class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-brand-700/30 hover:bg-brand-50/80" href="/items/{{item._id}}/history">Full history</a>
+    <a class="inline-flex items-center justify-center rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-900" href="/items/{{item._id}}/edit">Edit item</a>
+    <form method="POST" action="/items/{{item._id}}/delete" data-confirm="Delete this item permanently? This cannot be undone.">
+      <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50">
+        Delete
       </button>
     </form>
-
-    <a class="rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300" href="/items">Back to items</a>
-  </div>
+    <a class="inline-flex items-center justify-center rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900" href="/items">Back to list</a>
+  </footer>
 </section>

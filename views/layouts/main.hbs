@@ -25,13 +25,19 @@
     };
   </script>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-white text-slate-800">
+<body class="min-h-screen bg-gradient-to-br from-slate-100 via-brand-50/40 to-white text-slate-800 antialiased">
+  <a
+    href="#main-content"
+    class="fixed left-4 top-4 z-[100] rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white opacity-0 shadow-lg outline-none ring-2 ring-transparent transition pointer-events-none focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:ring-white/70"
+  >Skip to content</a>
   <div class="min-h-screen">
     {{> nav}}
     <div class="flex min-h-screen flex-1 flex-col lg:ml-72">
-      <main class="w-full flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-8">
-        {{{body}}}
-      </main>      
+      <main id="main-content" class="w-full flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-8" tabindex="-1">
+        <div class="mx-auto max-w-7xl">
+          {{{body}}}
+        </div>
+      </main>
     </div>
   </div>
   <script src="/js/main.js" defer></script>
