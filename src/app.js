@@ -19,6 +19,8 @@ const webRoutes = require('./routes/web.routes');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 const viewsPath = path.join(__dirname, '..', 'views');
 const publicPath = path.join(__dirname, '..', 'public');
 
