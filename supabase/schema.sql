@@ -52,3 +52,7 @@ create index if not exists items_item_id_idx on public.items(item_id);
 create index if not exists transactions_item_id_created_at_idx on public.transactions(item_id, created_at);
 create index if not exists transactions_assignee_id_idx on public.transactions(assignee_id);
 create index if not exists transactions_performed_by_id_idx on public.transactions(performed_by_id);
+
+insert into storage.buckets (id, name, public)
+values ('documents', 'documents', true)
+on conflict (id) do nothing;

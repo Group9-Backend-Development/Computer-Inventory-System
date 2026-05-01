@@ -1,16 +1,14 @@
 const transactionService = require('../services/transaction.service');
-
-function uploadedDocumentPath(file) {
-  return file ? `/documents/${file.filename}` : null;
-}
+const documentService = require('../services/document.service');
 
 async function checkout(req, res) {
   try {
+    const documentPath = await documentService.uploadDocument(req.file);
     const result = await transactionService.checkoutItem({
       itemId: req.body.itemId,
       assigneeId: req.body.assigneeId,
       performedById: req.user.id,
-      documentPath: uploadedDocumentPath(req.file),
+      documentPath,
       note: req.body.note,
     });
 
@@ -22,10 +20,11 @@ async function checkout(req, res) {
 
 async function checkin(req, res) {
   try {
+    const documentPath = await documentService.uploadDocument(req.file);
     const result = await transactionService.checkinItem({
       itemId: req.body.itemId,
       performedById: req.user.id,
-      documentPath: uploadedDocumentPath(req.file),
+      documentPath,
       note: req.body.note,
     });
 

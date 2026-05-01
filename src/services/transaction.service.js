@@ -1,9 +1,8 @@
-const path = require('path');
-
 const supabase = require('../config/supabase');
 const env = require('../config/env');
 const mockStore = require('../data/mockStore');
 const itemService = require('./item.service');
+const documentService = require('./document.service');
 
 function createHttpError(status, message) {
   const error = new Error(message);
@@ -40,22 +39,10 @@ function formatDuration(start, end = new Date()) {
   return `${hours} hour${hours === 1 ? '' : 's'}`;
 }
 
-function documentUrl(documentPath) {
-  if (!documentPath) {
-    return null;
-  }
-
-  if (documentPath.startsWith('/documents/')) {
-    return documentPath;
-  }
-
-  return `/documents/${path.basename(documentPath)}`;
-}
-
 function mapTransaction(row, usersById = {}) {
   const assignee = usersById[row.assignee_id];
   const performer = usersById[row.performed_by_id];
-  const url = documentUrl(row.document_path);
+  const url = documentService.documentUrl(row.document_path);
 
   return {
     id: row.id,
@@ -67,7 +54,7 @@ function mapTransaction(row, usersById = {}) {
     performedByName: performer ? performer.email : row.performed_by_id || '',
     documentPath: row.document_path,
     documentUrl: url,
-    documentName: url ? path.basename(url) : null,
+    documentName: documentService.documentName(row.document_path),
     note: row.note || '',
     createdAt: row.created_at,
     createdAtLabel: formatDate(row.created_at),
@@ -361,6 +348,7 @@ module.exports = {
   buildAssignmentHistory,
   checkinItem,
   checkoutItem,
+  formatDuration,
   getOpenCheckout,
   listHistoryForItem,
   listUsers,

@@ -21,13 +21,13 @@ router.get('/items', webController.itemsIndex);
 
 router.post('/items', webController.itemsCreate);
 router.post('/items/:id/edit', webController.itemsUpdate);
-router.post('/items/:id/delete', webController.itemsDelete);
+router.post('/items/:id/delete', requireWebAdmin, webController.itemsDelete);
 
-router.get('/users/new', webController.usersNew);
-router.get('/users', webController.usersIndex);
-router.post('/users', webController.usersCreate);
-router.post('/users/:id/role', webController.usersUpdateRole);
-router.post('/users/:id/status', webController.usersUpdateStatus);
+router.get('/users/new', requireWebAdmin, webController.usersNew);
+router.get('/users', requireWebAdmin, webController.usersIndex);
+router.post('/users', requireWebAdmin, webController.usersCreate);
+router.post('/users/:id/role', requireWebAdmin, webController.usersUpdateRole);
+router.post('/users/:id/status', requireWebAdmin, webController.usersUpdateStatus);
 
 router.post('/keys/generate', requireWebAdmin, webController.keysGenerate);
 router.post('/keys/:id/revoke', requireWebAdmin, webController.keysRevoke);

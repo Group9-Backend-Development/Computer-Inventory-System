@@ -1,4 +1,7 @@
 const supabase = require('../config/supabase');
+const env = require('../config/env');
+const mockStore = require('../data/mockStore');
+const apiKeyService = require('./apiKey.service');
 
 function mapUser(row) {
   if (!row) {
@@ -6,16 +9,24 @@ function mapUser(row) {
   }
 
   return {
-    id: row.id,
+    id: row.id || row._id,
     email: row.email,
     role: row.role,
-    isEnabled: row.is_enabled,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    isEnabled: row.is_enabled ?? row.isEnabled,
+    createdAt: row.created_at || row.createdAt,
+    updatedAt: row.updated_at || row.updatedAt,
   };
 }
 
 async function listUsers() {
+  if (env.useMockData) {
+    return mockStore.clone(
+      mockStore.users
+        .map(mapUser)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    );
+  }
+
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -29,6 +40,23 @@ async function listUsers() {
 }
 
 async function createUser({ email, passwordHash, role }) {
+  if (env.useMockData) {
+    const id = mockStore.nextId('u', mockStore.users);
+    const now = new Date().toISOString();
+    const user = {
+      _id: id,
+      id,
+      email,
+      passwordHash,
+      role,
+      isEnabled: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    mockStore.users.push(user);
+    return mapUser(user);
+  }
+
   const payload = {
     email,
     password_hash: passwordHash,
@@ -50,6 +78,11 @@ async function createUser({ email, passwordHash, role }) {
 }
 
 async function findUserById(id) {
+  if (env.useMockData) {
+    const user = mockStore.users.find((row) => row.id === id || row._id === id);
+    return mapUser(user || null);
+  }
+
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -64,6 +97,21 @@ async function findUserById(id) {
 }
 
 async function findUserByEmail(email) {
+  if (env.useMockData) {
+    const data = mockStore.users.find((row) => row.email === email);
+    return data
+      ? {
+          id: data.id,
+          email: data.email,
+          passwordHash: data.passwordHash,
+          role: data.role,
+          isEnabled: data.isEnabled,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        }
+      : null;
+  }
+
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -88,6 +136,16 @@ async function findUserByEmail(email) {
 }
 
 async function updateUserRole(id, role) {
+  if (env.useMockData) {
+    const user = mockStore.users.find((row) => row.id === id || row._id === id);
+    if (!user) {
+      return null;
+    }
+    user.role = role;
+    user.updatedAt = new Date().toISOString();
+    return mapUser(user);
+  }
+
   const { data, error } = await supabase
     .from('users')
     .update({
@@ -106,6 +164,19 @@ async function updateUserRole(id, role) {
 }
 
 async function updateUserStatus(id, isEnabled) {
+  if (env.useMockData) {
+    const user = mockStore.users.find((row) => row.id === id || row._id === id);
+    if (!user) {
+      return null;
+    }
+    user.isEnabled = isEnabled;
+    user.updatedAt = new Date().toISOString();
+    if (!isEnabled) {
+      await apiKeyService.revokeKeysForUser(user.id);
+    }
+    return mapUser(user);
+  }
+
   const { data, error } = await supabase
     .from('users')
     .update({
@@ -118,6 +189,10 @@ async function updateUserStatus(id, isEnabled) {
 
   if (error) {
     throw error;
+  }
+
+  if (data && !isEnabled) {
+    await apiKeyService.revokeKeysForUser(id);
   }
 
   return mapUser(data);

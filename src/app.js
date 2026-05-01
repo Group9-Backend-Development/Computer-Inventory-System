@@ -5,11 +5,10 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 
-// const { globalLimiter } = require('./middleware/rateLimiter');
+const { globalLimiter } = require('./middleware/rateLimiter');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { navSectionMiddleware } = require('./middleware/navSection');
 const { loadWebUser } = require('./middleware/webAuth');
-const { uploadDir } = require('./middleware/upload');
 
 const authRoutes = require('./routes/auth.routes');
 const usersRoutes = require('./routes/users.routes');
@@ -32,7 +31,7 @@ hbs.registerHelper('eq', function (a, b) {
   return a === b;
 });
 
-// app.use(globalLimiter);
+app.use(globalLimiter);
 app.use(morgan('combined'));
 app.use(
   cors({
@@ -45,7 +44,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(loadWebUser);
 app.use(express.static(publicPath));
-app.use('/documents', express.static(uploadDir));
 
 app.use(navSectionMiddleware);
 

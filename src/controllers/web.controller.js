@@ -3,14 +3,11 @@ const transactionService = require('../services/transaction.service');
 const reportService = require('../services/report.service');
 const apiKeyService = require('../services/apiKey.service');
 const userService = require('../services/user.service');
+const documentService = require('../services/document.service');
 const { comparePassword, hashPassword } = require('../utils/password');
 const { signAccessToken } = require('../utils/jwt');
 const { setAuthCookie, clearAuthCookie, safeNextPath } = require('../middleware/webAuth');
 const { storePlaintextOnce, takePlaintext } = require('../utils/pendingApiKeyReveal');
-
-function uploadedDocumentPath(file) {
-  return file ? `/documents/${file.filename}` : null;
-}
 
 async function home(req, res, next) {
   try {
@@ -430,15 +427,23 @@ async function keysRevoke(req, res, next) {
 
 async function reportsIndex(req, res, next) {
   try {
-    const [inventorySummary, agingItems] = await Promise.all([
+    const selectedUserId = typeof req.query.userId === 'string' ? req.query.userId.trim() : '';
+    const [inventorySummary, agingItems, users, auditAssets] = await Promise.all([
       reportService.inventoryStatusSummary(),
       reportService.listAssetsOlderThanThreeYears(),
+      userService.listUsers(),
+      selectedUserId ? reportService.listCurrentAssetsForUser(selectedUserId) : Promise.resolve([]),
     ]);
+    const selectedAuditUser = users.find((user) => user.id === selectedUserId);
 
     res.render('reports/index', {
       title: 'Reports',
       inventorySummary,
       agingItems,
+      users,
+      selectedUserId,
+      selectedAuditUser,
+      auditAssets,
     });
   } catch (error) {
     next(error);
@@ -481,11 +486,12 @@ async function transactionsCheckin(req, res, next) {
 
 async function transactionsCheckoutCreate(req, res, next) {
   try {
+    const documentPath = await documentService.uploadDocument(req.file);
     await transactionService.checkoutItem({
       itemId: req.body.itemId,
       assigneeId: req.body.assigneeId,
       performedById: req.body.performedById,
-      documentPath: uploadedDocumentPath(req.file),
+      documentPath,
       note: req.body.note,
     });
 
@@ -497,10 +503,11 @@ async function transactionsCheckoutCreate(req, res, next) {
 
 async function transactionsCheckinCreate(req, res, next) {
   try {
+    const documentPath = await documentService.uploadDocument(req.file);
     await transactionService.checkinItem({
       itemId: req.body.itemId,
       performedById: req.body.performedById,
-      documentPath: uploadedDocumentPath(req.file),
+      documentPath,
       note: req.body.note,
     });
 

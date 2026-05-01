@@ -77,7 +77,7 @@ async function createKey(createdByUserId, label) {
   };
 }
 
-async function listKeys() {
+async function listKeys({ includeRevoked = false } = {}) {
   if (env.useMockData) {
     const mapped = mockStore.apiKeys.map((row) => {
       const creator = mockStore.users.find((u) => u.id === row.createdBy || u._id === row.createdBy);
@@ -90,7 +90,7 @@ async function listKeys() {
         creatorEmail: creator ? creator.email : '',
       };
     });
-    return sortKeysForUi(mapped);
+    return sortKeysForUi(includeRevoked ? mapped : mapped.filter((row) => row.status === 'active'));
   }
 
   const { data: rows, error } = await supabase
@@ -124,7 +124,7 @@ async function listKeys() {
     creatorEmail: emailById[r.created_by_id] || '',
   }));
 
-  return sortKeysForUi(mapped);
+  return sortKeysForUi(includeRevoked ? mapped : mapped.filter((row) => row.status === 'active'));
 }
 
 async function revokeKey(id) {
@@ -174,8 +174,35 @@ async function revokeKey(id) {
   }
 }
 
+async function revokeKeysForUser(userId) {
+  if (env.useMockData) {
+    const now = new Date().toISOString();
+    for (const row of mockStore.apiKeys) {
+      if ((row.createdBy === userId || row.created_by_id === userId) && !row.isRevoked) {
+        row.isRevoked = true;
+        row.updatedAt = now;
+      }
+    }
+    return;
+  }
+
+  const { error } = await supabase
+    .from('api_keys')
+    .update({
+      is_revoked: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('created_by_id', userId)
+    .eq('is_revoked', false);
+
+  if (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   createKey,
   listKeys,
   revokeKey,
+  revokeKeysForUser,
 };

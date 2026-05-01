@@ -127,11 +127,13 @@
   <footer class="flex flex-wrap gap-3 border-t border-slate-100 pt-6">
     <a class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-brand-700/30 hover:bg-brand-50/80" href="/items/{{item._id}}/history">Full history</a>
     <a class="inline-flex items-center justify-center rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-900" href="/items/{{item._id}}/edit">Edit item</a>
-    <form method="POST" action="/items/{{item._id}}/delete" data-confirm="Delete this item permanently? This cannot be undone.">
-      <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50">
-        Delete
-      </button>
-    </form>
+    {{#if (eq currentUser.role "admin")}}
+      <form method="POST" action="/items/{{item._id}}/delete" data-confirm="Delete this item permanently? This cannot be undone.">
+        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50">
+          Delete
+        </button>
+      </form>
+    {{/if}}
     <a class="inline-flex items-center justify-center rounded-lg border border-transparent px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900" href="/items">Back to list</a>
   </footer>
 </section>

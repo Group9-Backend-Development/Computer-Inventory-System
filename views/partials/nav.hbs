@@ -64,12 +64,12 @@
         {{#if (eq navSection 'reports')}}aria-current="page"{{/if}}
         href="/reports"
       >Reports</a>
-      <a
-        class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'users')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
-        {{#if (eq navSection 'users')}}aria-current="page"{{/if}}
-        href="/users"
-      >Users</a>
       {{#if (eq currentUser.role 'admin')}}
+        <a
+          class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'users')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
+          {{#if (eq navSection 'users')}}aria-current="page"{{/if}}
+          href="/users"
+        >Users</a>
         <a
           class="rounded-lg border px-3 py-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700 {{#if (eq navSection 'keys')}}border-brand-700/35 bg-brand-50 font-semibold text-brand-900 shadow-sm{{else}}border-transparent font-medium text-slate-700 hover:border-slate-200 hover:bg-white hover:text-slate-900{{/if}}"
           {{#if (eq navSection 'keys')}}aria-current="page"{{/if}}
