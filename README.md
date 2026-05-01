@@ -91,12 +91,12 @@ We used:
 - **Node.js**
 - **Express.js**
 - **Handlebars (HBS)**
+- **Supabase / PostgreSQL**
 - **JWT** for authentication
 - **bcrypt / bcryptjs** for password hashing
 - **multer** for file uploads
 - **morgan** for request logging
 - **express-rate-limit** for rate limiting
-- **cloud-hosted database and storage services** for persistence and uploaded documents
 
 ## Live Demo
 
