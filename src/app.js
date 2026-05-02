@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 
+const { connectMongo } = require('./config/database');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { navSectionMiddleware } = require('./middleware/navSection');
@@ -44,6 +45,16 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use(async (req, res, next) => {
+  try {
+    await connectMongo();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.use(loadWebUser);
 app.use(express.static(publicPath));
 
