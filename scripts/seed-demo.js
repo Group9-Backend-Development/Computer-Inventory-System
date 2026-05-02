@@ -5,19 +5,30 @@
  *   node scripts/seed-demo.js
  *
  * Requires:
+ *   MONGODB_URI
  *   SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
  *   SUPABASE_DOCUMENTS_BUCKET optional, defaults to "documents"
+ *
+ * Optional:
+ *   SEED_SKIP_STORAGE=true  — seed MongoDB only (no Supabase uploads; transaction paths point at object keys only).
  */
 require('dotenv').config();
 
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
+
+const User = require('../src/models/User');
+const Item = require('../src/models/Item');
+const Transaction = require('../src/models/Transaction');
+const ApiKey = require('../src/models/ApiKey');
 
 const SALT_ROUNDS = 10;
 const DOCUMENTS_BUCKET = process.env.SUPABASE_DOCUMENTS_BUCKET || 'documents';
 const SEED_PREFIX = '[seed-demo]';
+const skipStorage = process.env.SEED_SKIP_STORAGE === 'true';
 
 const USERS = [
   {
@@ -197,58 +208,62 @@ function hashApiKey(raw) {
   return crypto.createHash('sha256').update(String(raw).trim()).digest('hex');
 }
 
-async function upsertUsers(supabase) {
+function seedNoteRegex() {
+  const escaped = SEED_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(escaped);
+}
+
+async function upsertUsers() {
   const usersByKey = {};
 
   for (const user of USERS) {
     const passwordHash = await bcrypt.hash(user.password, SALT_ROUNDS);
-    const { data, error } = await supabase
-      .from('users')
-      .upsert(
-        {
-          email: user.email,
-          password_hash: passwordHash,
+    const doc = await User.findOneAndUpdate(
+      { email: user.email.toLowerCase() },
+      {
+        $set: {
+          passwordHash,
           role: user.role,
-          is_enabled: user.is_enabled,
-          updated_at: new Date().toISOString(),
+          isEnabled: user.is_enabled,
         },
-        { onConflict: 'email' }
-      )
-      .select('id, email, role, is_enabled')
-      .single();
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).lean();
 
-    if (error) {
-      throw new Error(`Failed to upsert user ${user.email}: ${error.message}`);
-    }
-
-    usersByKey[user.key] = data;
+    usersByKey[user.key] = { id: String(doc._id), email: doc.email, role: doc.role, is_enabled: doc.isEnabled };
   }
 
   return usersByKey;
 }
 
-async function upsertItems(supabase) {
+async function upsertItems() {
   const itemsByKey = {};
 
   for (const item of ITEMS) {
-    const { key, ...payload } = item;
-    const { data, error } = await supabase
-      .from('items')
-      .upsert(
-        {
-          ...payload,
-          updated_at: new Date().toISOString(),
+    const { key, ...rest } = item;
+    const doc = await Item.findOneAndUpdate(
+      { itemId: rest.item_id },
+      {
+        $set: {
+          serialNumber: rest.serial_number,
+          model: rest.model,
+          brand: rest.brand,
+          classification: rest.classification,
+          category: rest.category,
+          status: rest.status,
+          dateAcquired: new Date(rest.date_acquired),
+          isDeleted: rest.is_deleted,
         },
-        { onConflict: 'item_id' }
-      )
-      .select('id, item_id, status, is_deleted')
-      .single();
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).lean();
 
-    if (error) {
-      throw new Error(`Failed to upsert item ${item.item_id}: ${error.message}`);
-    }
-
-    itemsByKey[key] = data;
+    itemsByKey[key] = {
+      id: String(doc._id),
+      item_id: doc.itemId,
+      status: doc.status,
+      is_deleted: doc.isDeleted,
+    };
   }
 
   return itemsByKey;
@@ -295,101 +310,102 @@ async function uploadDocuments(supabase) {
   return documentPaths;
 }
 
-async function refreshSeedTransactions(supabase, itemsByKey, usersByKey, documentPaths) {
-  const itemIds = Object.values(itemsByKey).map((item) => item.id);
-  const { error: deleteError } = await supabase
-    .from('transactions')
-    .delete()
-    .in('item_id', itemIds)
-    .ilike('note', `${SEED_PREFIX}%`);
+async function refreshSeedTransactions(itemsByKey, usersByKey, documentPaths) {
+  const itemIds = Object.values(itemsByKey).map((row) => row.id);
+  const itemObjectIds = itemIds.map((id) => new mongoose.Types.ObjectId(id));
 
-  if (deleteError) {
-    throw new Error(`Failed to refresh seed transactions: ${deleteError.message}`);
-  }
+  await Transaction.deleteMany({
+    item: { $in: itemObjectIds },
+    note: seedNoteRegex(),
+  });
 
-  const transactions = [
+  const rows = [
     {
-      item_id: itemsByKey.inUseLaptop.id,
+      item: new mongoose.Types.ObjectId(itemsByKey.inUseLaptop.id),
       type: 'checkout',
-      assignee_id: usersByKey.technicianLead.id,
-      performed_by_id: usersByKey.admin.id,
-      document_path: documentPaths.checkoutLeadLaptop,
+      assignee: new mongoose.Types.ObjectId(usersByKey.technicianLead.id),
+      performedBy: new mongoose.Types.ObjectId(usersByKey.admin.id),
+      documentPath: documentPaths.checkoutLeadLaptop,
       note: `${SEED_PREFIX} Active checkout for user audit and item history.`,
-      created_at: '2026-02-01T09:00:00.000Z',
-      updated_at: '2026-02-01T09:00:00.000Z',
+      createdAt: new Date('2026-02-01T09:00:00.000Z'),
+      updatedAt: new Date('2026-02-01T09:00:00.000Z'),
     },
     {
-      item_id: itemsByKey.inUseDesktop.id,
+      item: new mongoose.Types.ObjectId(itemsByKey.inUseDesktop.id),
       type: 'checkout',
-      assignee_id: usersByKey.technicianOne.id,
-      performed_by_id: usersByKey.admin.id,
-      document_path: documentPaths.checkoutDesktop,
+      assignee: new mongoose.Types.ObjectId(usersByKey.technicianOne.id),
+      performedBy: new mongoose.Types.ObjectId(usersByKey.admin.id),
+      documentPath: documentPaths.checkoutDesktop,
       note: `${SEED_PREFIX} Active checkout for deployed asset reporting.`,
-      created_at: '2026-03-05T10:30:00.000Z',
-      updated_at: '2026-03-05T10:30:00.000Z',
+      createdAt: new Date('2026-03-05T10:30:00.000Z'),
+      updatedAt: new Date('2026-03-05T10:30:00.000Z'),
     },
     {
-      item_id: itemsByKey.availableMonitor.id,
+      item: new mongoose.Types.ObjectId(itemsByKey.availableMonitor.id),
       type: 'checkout',
-      assignee_id: usersByKey.technicianOne.id,
-      performed_by_id: usersByKey.technicianLead.id,
-      document_path: documentPaths.checkoutCompleted,
+      assignee: new mongoose.Types.ObjectId(usersByKey.technicianOne.id),
+      performedBy: new mongoose.Types.ObjectId(usersByKey.technicianLead.id),
+      documentPath: documentPaths.checkoutCompleted,
       note: `${SEED_PREFIX} Completed checkout history sample.`,
-      created_at: '2026-01-10T08:30:00.000Z',
-      updated_at: '2026-01-10T08:30:00.000Z',
+      createdAt: new Date('2026-01-10T08:30:00.000Z'),
+      updatedAt: new Date('2026-01-10T08:30:00.000Z'),
     },
     {
-      item_id: itemsByKey.availableMonitor.id,
+      item: new mongoose.Types.ObjectId(itemsByKey.availableMonitor.id),
       type: 'checkin',
-      assignee_id: usersByKey.technicianOne.id,
-      performed_by_id: usersByKey.technicianLead.id,
-      document_path: documentPaths.checkinCompleted,
+      assignee: new mongoose.Types.ObjectId(usersByKey.technicianOne.id),
+      performedBy: new mongoose.Types.ObjectId(usersByKey.technicianLead.id),
+      documentPath: documentPaths.checkinCompleted,
       note: `${SEED_PREFIX} Completed return inspection sample.`,
-      created_at: '2026-01-17T16:45:00.000Z',
-      updated_at: '2026-01-17T16:45:00.000Z',
+      createdAt: new Date('2026-01-17T16:45:00.000Z'),
+      updatedAt: new Date('2026-01-17T16:45:00.000Z'),
     },
   ];
 
-  const { error } = await supabase.from('transactions').insert(transactions);
-  if (error) {
-    throw new Error(`Failed to insert seed transactions: ${error.message}`);
+  await Transaction.insertMany(rows);
+}
+
+async function upsertApiKeys(usersByKey) {
+  for (const apiKey of API_KEYS) {
+    const keyHash = hashApiKey(apiKey.rawKey);
+    const createdById = new mongoose.Types.ObjectId(usersByKey[apiKey.createdBy].id);
+
+    const existing = await ApiKey.findOne({ keyHash }).lean();
+
+    if (existing) {
+      await ApiKey.updateOne(
+        { _id: existing._id },
+        {
+          label: apiKey.label,
+          createdBy: createdById,
+          isRevoked: apiKey.is_revoked,
+        }
+      );
+    } else {
+      await ApiKey.create({
+        keyHash,
+        label: apiKey.label,
+        createdBy: createdById,
+        isRevoked: apiKey.is_revoked,
+      });
+    }
   }
 }
 
-async function upsertApiKeys(supabase, usersByKey) {
-  for (const apiKey of API_KEYS) {
-    const keyHash = hashApiKey(apiKey.rawKey);
-    const { data: existing, error: findError } = await supabase
-      .from('api_keys')
-      .select('id')
-      .eq('key_hash', keyHash)
-      .maybeSingle();
-
-    if (findError) {
-      throw new Error(`Failed to check API key ${apiKey.label}: ${findError.message}`);
-    }
-
-    const payload = {
-      key_hash: keyHash,
-      label: apiKey.label,
-      created_by_id: usersByKey[apiKey.createdBy].id,
-      is_revoked: apiKey.is_revoked,
-      updated_at: new Date().toISOString(),
-    };
-
-    const query = existing
-      ? supabase.from('api_keys').update(payload).eq('id', existing.id)
-      : supabase.from('api_keys').insert(payload);
-
-    const { error } = await query;
-    if (error) {
-      throw new Error(`Failed to upsert API key ${apiKey.label}: ${error.message}`);
-    }
-  }
+function placeholderDocumentPaths() {
+  return {
+    checkoutLeadLaptop: DOCUMENTS[0].path,
+    checkoutDesktop: DOCUMENTS[1].path,
+    checkoutCompleted: DOCUMENTS[2].path,
+    checkinCompleted: DOCUMENTS[3].path,
+  };
 }
 
 function printSummary() {
   console.log('Seed complete.');
+  if (skipStorage) {
+    console.log('(Supabase Storage skipped: run full `npm run seed` after fixing credentials to upload seed files.)');
+  }
   console.log('');
   console.log('Login accounts:');
   for (const user of USERS) {
@@ -401,23 +417,39 @@ function printSummary() {
     console.log(`- ${apiKey.label}: ${apiKey.rawKey} (${apiKey.is_revoked ? 'revoked' : 'active'})`);
   }
   console.log('');
-  console.log('Seeded coverage: users, roles, disabled account, active/revoked API keys, available/in-use/maintenance/retired/soft-deleted items, aging assets, completed history, active checkouts, and Supabase Storage documents.');
+  console.log(
+    skipStorage
+      ? 'Seeded coverage: users, roles, disabled account, active/revoked API keys, items, transactions, API keys (MongoDB only).'
+      : 'Seeded coverage: users, roles, disabled account, active/revoked API keys, available/in-use/maintenance/retired/soft-deleted items, aging assets, completed history, active checkouts, and Supabase Storage documents.'
+  );
 }
 
 async function main() {
-  const url = required('SUPABASE_URL');
-  const serviceRoleKey = required('SUPABASE_SERVICE_ROLE_KEY');
-  const supabase = createClient(supabaseUrl(url), serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const mongoUri = required('MONGODB_URI');
 
-  await ensureBucket(supabase);
-  const usersByKey = await upsertUsers(supabase);
-  const itemsByKey = await upsertItems(supabase);
-  const documentPaths = await uploadDocuments(supabase);
-  await refreshSeedTransactions(supabase, itemsByKey, usersByKey, documentPaths);
-  await upsertApiKeys(supabase, usersByKey);
+  await mongoose.connect(mongoUri);
+
+  const usersByKey = await upsertUsers();
+  const itemsByKey = await upsertItems();
+
+  let documentPaths;
+  if (skipStorage) {
+    documentPaths = placeholderDocumentPaths();
+  } else {
+    const url = required('SUPABASE_URL');
+    const serviceRoleKey = required('SUPABASE_SERVICE_ROLE_KEY');
+    const supabase = createClient(supabaseUrl(url), serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    await ensureBucket(supabase);
+    documentPaths = await uploadDocuments(supabase);
+  }
+
+  await refreshSeedTransactions(itemsByKey, usersByKey, documentPaths);
+  await upsertApiKeys(usersByKey);
   printSummary();
+
+  await mongoose.disconnect();
 }
 
 main().catch((error) => {

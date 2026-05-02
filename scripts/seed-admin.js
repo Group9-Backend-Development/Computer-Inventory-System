@@ -1,52 +1,45 @@
 /**
- * One-time / idempotent: upsert admin user in Supabase.
- * Usage: node scripts/seed-admin.js
- * Requires: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY in .env
+ * Upsert a default admin user in MongoDB.
+ *
+ * Requires: MONGODB_URI
  */
 require('dotenv').config();
 
-const { createClient } = require('@supabase/supabase-js');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+
+const User = require('../src/models/User');
 
 const EMAIL = 'admin@gmail.com';
 const PASSWORD = 'admin123';
 const SALT_ROUNDS = 10;
 
 async function main() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key || url === 'change-me-in-production') {
-    console.error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env');
+  const uri = process.env.MONGODB_URI;
+  if (!uri || uri === 'change-me-in-production') {
+    console.error('Set MONGODB_URI in .env');
     process.exit(1);
   }
 
-  const supabaseUrl = /^https?:\/\//i.test(url) ? url : `https://${url}.supabase.co`;
-  const supabase = createClient(supabaseUrl, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  await mongoose.connect(uri);
 
   const passwordHash = await bcrypt.hash(PASSWORD, SALT_ROUNDS);
 
-  const { data, error } = await supabase
-    .from('users')
-    .upsert(
-      {
-        email: EMAIL,
-        password_hash: passwordHash,
+  const user = await User.findOneAndUpdate(
+    { email: EMAIL.toLowerCase() },
+    {
+      $set: {
+        passwordHash,
         role: 'admin',
-        is_enabled: true,
+        isEnabled: true,
       },
-      { onConflict: 'email' }
-    )
-    .select('id, email, role')
-    .single();
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  ).lean();
 
-  if (error) {
-    console.error(error.message || error);
-    process.exit(1);
-  }
+  console.log('OK: admin upserted', { id: String(user._id), email: user.email, role: user.role });
 
-  console.log('OK: admin upserted', data);
+  await mongoose.disconnect();
 }
 
 main().catch((e) => {

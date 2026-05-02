@@ -2,13 +2,15 @@
   "name": "computer-inventory-system",
   "version": "0.1.0",
   "private": true,
-  "description": "INF 653 — Computer Inventory System (Express, Handlebars, Supabase)",
+  "description": "INF 653 — Computer Inventory System (Express, Handlebars, MongoDB, Supabase Storage)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node scripts/seed-demo.js",
+    "seed:mongo": "SEED_SKIP_STORAGE=true node scripts/seed-demo.js",
     "seed:admin": "node scripts/seed-admin.js",
+    "verify:mongo": "node scripts/verify-mongo.js",
     "test": "node --test tests/unit/*.test.js tests/integration/*.test.js"
   },
   "engines": {

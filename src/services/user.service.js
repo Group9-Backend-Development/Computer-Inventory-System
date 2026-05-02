@@ -1,15 +1,18 @@
-const supabase = require('../config/supabase');
 const env = require('../config/env');
 const mockStore = require('../data/mockStore');
+const User = require('../models/User');
 const apiKeyService = require('./apiKey.service');
+const { toObjectId } = require('../utils/objectId');
 
 function mapUser(row) {
   if (!row) {
     return null;
   }
 
+  const id = row.id || String(row._id);
+
   return {
-    id: row.id || row._id,
+    id,
     email: row.email,
     role: row.role,
     isEnabled: row.is_enabled ?? row.isEnabled,
@@ -27,16 +30,17 @@ async function listUsers() {
     );
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw error;
-  }
-
-  return data.map(mapUser);
+  const rows = await User.find().sort({ createdAt: -1 }).lean();
+  return rows.map((row) =>
+    mapUser({
+      _id: row._id,
+      email: row.email,
+      role: row.role,
+      isEnabled: row.isEnabled,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    })
+  );
 }
 
 async function createUser({ email, passwordHash, role }) {
@@ -57,24 +61,14 @@ async function createUser({ email, passwordHash, role }) {
     return mapUser(user);
   }
 
-  const payload = {
+  const created = await User.create({
     email,
-    password_hash: passwordHash,
+    passwordHash,
     role,
-    is_enabled: true,
-  };
+    isEnabled: true,
+  });
 
-  const { data, error } = await supabase
-    .from('users')
-    .insert(payload)
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return mapUser(data);
+  return mapUser(created.toObject());
 }
 
 async function findUserById(id) {
@@ -83,17 +77,24 @@ async function findUserById(id) {
     return mapUser(user || null);
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
+  const oid = toObjectId(id);
+  if (!oid) {
+    return null;
   }
 
-  return mapUser(data);
+  const row = await User.findById(oid).lean();
+  if (!row) {
+    return null;
+  }
+
+  return mapUser({
+    _id: row._id,
+    email: row.email,
+    role: row.role,
+    isEnabled: row.isEnabled,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  });
 }
 
 async function findUserByEmail(email) {
@@ -112,27 +113,20 @@ async function findUserByEmail(email) {
       : null;
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', email)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
+  const row = await User.findOne({ email: email.trim().toLowerCase() }).lean();
+  if (!row) {
+    return null;
   }
 
-  return data
-    ? {
-        id: data.id,
-        email: data.email,
-        passwordHash: data.password_hash,
-        role: data.role,
-        isEnabled: data.is_enabled,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      }
-    : null;
+  return {
+    id: String(row._id),
+    email: row.email,
+    passwordHash: row.passwordHash,
+    role: row.role,
+    isEnabled: row.isEnabled,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
 }
 
 async function updateUserRole(id, role) {
@@ -146,21 +140,13 @@ async function updateUserRole(id, role) {
     return mapUser(user);
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .update({
-      role,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .maybeSingle();
-
-  if (error) {
-    throw error;
+  const oid = toObjectId(id);
+  if (!oid) {
+    return null;
   }
 
-  return mapUser(data);
+  const updated = await User.findByIdAndUpdate(oid, { role }, { new: true }).lean();
+  return mapUser(updated);
 }
 
 async function updateUserStatus(id, isEnabled) {
@@ -177,25 +163,17 @@ async function updateUserStatus(id, isEnabled) {
     return mapUser(user);
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .update({
-      is_enabled: isEnabled,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .maybeSingle();
-
-  if (error) {
-    throw error;
+  const oid = toObjectId(id);
+  if (!oid) {
+    return null;
   }
 
-  if (data && !isEnabled) {
-    await apiKeyService.revokeKeysForUser(id);
+  const updated = await User.findByIdAndUpdate(oid, { isEnabled }, { new: true }).lean();
+  if (updated && !isEnabled) {
+    await apiKeyService.revokeKeysForUser(String(updated._id));
   }
 
-  return mapUser(data);
+  return mapUser(updated);
 }
 
 module.exports = {

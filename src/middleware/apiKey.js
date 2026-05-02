@@ -1,6 +1,6 @@
 const env = require('../config/env');
 const mockStore = require('../data/mockStore');
-const supabase = require('../config/supabase');
+const ApiKey = require('../models/ApiKey');
 const { hashApiKey } = require('../utils/apiKeyHash');
 
 function hashKey(rawKey) {
@@ -28,34 +28,18 @@ async function validateApiKey(req, res, next) {
       return next();
     }
 
-    const { data: record, error: keyErr } = await supabase
-      .from('api_keys')
-      .select('id, created_by_id')
-      .eq('key_hash', keyHash)
-      .eq('is_revoked', false)
-      .maybeSingle();
+    const record = await ApiKey.findOne({ keyHash, isRevoked: false }).populate('createdBy').lean();
 
-    if (keyErr) {
-      throw keyErr;
-    }
     if (!record) {
       return res.status(401).json({ error: 'Invalid API key' });
     }
 
-    const { data: creator, error: userErr } = await supabase
-      .from('users')
-      .select('id, is_enabled')
-      .eq('id', record.created_by_id)
-      .maybeSingle();
-
-    if (userErr) {
-      throw userErr;
-    }
-    if (!creator || !creator.is_enabled) {
+    const creator = record.createdBy;
+    if (!creator || !creator.isEnabled) {
       return res.status(401).json({ error: 'API key owner is disabled' });
     }
 
-    req.apiKey = { id: record.id };
+    req.apiKey = { id: String(record._id) };
     return next();
   } catch (err) {
     return next(err);

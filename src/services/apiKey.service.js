@@ -2,8 +2,9 @@ const crypto = require('crypto');
 
 const env = require('../config/env');
 const mockStore = require('../data/mockStore');
-const supabase = require('../config/supabase');
+const ApiKey = require('../models/ApiKey');
 const { hashApiKey } = require('../utils/apiKeyHash');
+const { toObjectId } = require('../utils/objectId');
 
 function generateRawKey() {
   const suffix = crypto.randomBytes(32).toString('base64url');
@@ -56,24 +57,25 @@ async function createKey(createdByUserId, label) {
     };
   }
 
-  const payload = {
-    key_hash: keyHash,
-    label: label || null,
-    created_by_id: createdByUserId,
-    is_revoked: false,
-  };
-
-  const { data, error } = await supabase.from('api_keys').insert(payload).select('id, label, created_at').single();
-
-  if (error) {
-    throw error;
+  const creatorOid = toObjectId(createdByUserId);
+  if (!creatorOid) {
+    const err = new Error('Invalid user id');
+    err.status = 400;
+    throw err;
   }
 
+  const created = await ApiKey.create({
+    keyHash,
+    label: label || null,
+    createdBy: creatorOid,
+    isRevoked: false,
+  });
+
   return {
-    id: data.id,
-    label: data.label,
+    id: String(created._id),
+    label: created.label,
     plaintextKey,
-    createdAt: data.created_at,
+    createdAt: created.createdAt.toISOString(),
   };
 }
 
@@ -93,35 +95,22 @@ async function listKeys({ includeRevoked = false } = {}) {
     return sortKeysForUi(includeRevoked ? mapped : mapped.filter((row) => row.status === 'active'));
   }
 
-  const { data: rows, error } = await supabase
-    .from('api_keys')
-    .select('id, label, created_at, created_by_id, is_revoked, updated_at')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    throw error;
-  }
+  const rows = await ApiKey.find()
+    .populate('createdBy', 'email')
+    .sort({ createdAt: -1 })
+    .lean();
 
   if (!rows.length) {
     return [];
   }
 
-  const creatorIds = [...new Set(rows.map((r) => r.created_by_id))];
-  const { data: users, error: uerr } = await supabase.from('users').select('id, email').in('id', creatorIds);
-
-  if (uerr) {
-    throw uerr;
-  }
-
-  const emailById = Object.fromEntries((users || []).map((u) => [u.id, u.email]));
-
   const mapped = rows.map((r) => ({
-    id: r.id,
+    id: String(r._id),
     label: r.label,
-    status: rowStatus(r.is_revoked),
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    creatorEmail: emailById[r.created_by_id] || '',
+    status: rowStatus(r.isRevoked),
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null,
+    creatorEmail: r.createdBy && typeof r.createdBy === 'object' ? r.createdBy.email || '' : '',
   }));
 
   return sortKeysForUi(includeRevoked ? mapped : mapped.filter((row) => row.status === 'active'));
@@ -143,35 +132,24 @@ async function revokeKey(id) {
     return;
   }
 
-  const { data: existing, error: exErr } = await supabase
-    .from('api_keys')
-    .select('id, is_revoked')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (exErr) {
-    throw exErr;
+  const oid = toObjectId(id);
+  if (!oid) {
+    const err = new Error('API key not found');
+    err.status = 404;
+    throw err;
   }
+
+  const existing = await ApiKey.findById(oid).select('isRevoked').lean();
   if (!existing) {
     const err = new Error('API key not found');
     err.status = 404;
     throw err;
   }
-  if (existing.is_revoked) {
+  if (existing.isRevoked) {
     return;
   }
 
-  const { error } = await supabase
-    .from('api_keys')
-    .update({
-      is_revoked: true,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id);
-
-  if (error) {
-    throw error;
-  }
+  await ApiKey.updateOne({ _id: oid }, { isRevoked: true });
 }
 
 async function revokeKeysForUser(userId) {
@@ -186,18 +164,12 @@ async function revokeKeysForUser(userId) {
     return;
   }
 
-  const { error } = await supabase
-    .from('api_keys')
-    .update({
-      is_revoked: true,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('created_by_id', userId)
-    .eq('is_revoked', false);
-
-  if (error) {
-    throw error;
+  const oid = toObjectId(userId);
+  if (!oid) {
+    return;
   }
+
+  await ApiKey.updateMany({ createdBy: oid, isRevoked: false }, { isRevoked: true });
 }
 
 module.exports = {

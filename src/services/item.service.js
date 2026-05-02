@@ -1,25 +1,31 @@
-const supabase = require('../config/supabase');
 const env = require('../config/env');
 const mockStore = require('../data/mockStore');
+const Item = require('../models/Item');
+const { toObjectId } = require('../utils/objectId');
 
-function mapItem(row) {
-  if (!row) {
+function mapItem(doc) {
+  if (!doc) {
     return null;
   }
 
+  const o = doc.toObject ? doc.toObject() : doc;
+
   return {
-    _id: row.id,
-    itemId: row.item_id,
-    serialNumber: row.serial_number,
-    model: row.model,
-    brand: row.brand,
-    classification: row.classification,
-    category: row.category,
-    status: row.status,
-    dateAcquired: row.date_acquired,
-    isDeleted: row.is_deleted,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    _id: String(o._id ?? o.id),
+    itemId: o.itemId ?? o.item_id,
+    serialNumber: o.serialNumber ?? o.serial_number,
+    model: o.model,
+    brand: o.brand,
+    classification: o.classification,
+    category: o.category,
+    status: o.status,
+    dateAcquired: (() => {
+      const da = o.dateAcquired ?? o.date_acquired;
+      return da instanceof Date ? da.toISOString() : da;
+    })(),
+    isDeleted: o.isDeleted ?? o.is_deleted,
+    createdAt: o.createdAt?.toISOString ? o.createdAt.toISOString() : o.createdAt ?? o.created_at,
+    updatedAt: o.updatedAt?.toISOString ? o.updatedAt.toISOString() : o.updatedAt ?? o.updated_at,
   };
 }
 
@@ -32,17 +38,8 @@ async function listActiveItems() {
     );
   }
 
-  const { data, error } = await supabase
-    .from('items')
-    .select('*')
-    .eq('is_deleted', false)
-    .order('item_id', { ascending: true });
-
-  if (error) {
-    throw error;
-  }
-
-  return data.map(mapItem);
+  const rows = await Item.find({ isDeleted: false }).sort({ itemId: 1 }).lean();
+  return rows.map((row) => mapItem(row));
 }
 
 async function findActiveItemById(id) {
@@ -51,18 +48,13 @@ async function findActiveItemById(id) {
     return mockStore.clone(item || null);
   }
 
-  const { data, error } = await supabase
-    .from('items')
-    .select('*')
-    .eq('id', id)
-    .eq('is_deleted', false)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
+  const oid = toObjectId(id);
+  if (!oid) {
+    return null;
   }
 
-  return mapItem(data);
+  const row = await Item.findOne({ _id: oid, isDeleted: false }).lean();
+  return row ? mapItem(row) : null;
 }
 
 async function createItem(data) {
@@ -85,28 +77,19 @@ async function createItem(data) {
     return mockStore.clone(item);
   }
 
-  const payload = {
-    item_id: data.itemId,
-    serial_number: data.serialNumber,
+  const created = await Item.create({
+    itemId: data.itemId,
+    serialNumber: data.serialNumber,
     model: data.model,
     brand: data.brand,
     classification: data.classification,
     category: data.category,
-    status: data.status,
-    date_acquired: data.dateAcquired,
-  };
+    status: data.status || 'Available',
+    dateAcquired: data.dateAcquired,
+    isDeleted: false,
+  });
 
-  const { data: createdItem, error } = await supabase
-    .from('items')
-    .insert(payload)
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return mapItem(createdItem);
+  return mapItem(created);
 }
 
 async function updateItem(id, data) {
@@ -130,31 +113,27 @@ async function updateItem(id, data) {
     return mockStore.clone(item);
   }
 
-  const payload = {
-    item_id: data.itemId,
-    serial_number: data.serialNumber,
-    model: data.model,
-    brand: data.brand,
-    classification: data.classification,
-    category: data.category,
-    status: data.status,
-    date_acquired: data.dateAcquired,
-    updated_at: new Date().toISOString(),
-  };
-
-  const { data: updatedItem, error } = await supabase
-    .from('items')
-    .update(payload)
-    .eq('id', id)
-    .eq('is_deleted', false)
-    .select()
-    .maybeSingle();
-
-  if (error) {
-    throw error;
+  const oid = toObjectId(id);
+  if (!oid) {
+    return null;
   }
 
-  return mapItem(updatedItem);
+  const updated = await Item.findOneAndUpdate(
+    { _id: oid, isDeleted: false },
+    {
+      itemId: data.itemId,
+      serialNumber: data.serialNumber,
+      model: data.model,
+      brand: data.brand,
+      classification: data.classification,
+      category: data.category,
+      status: data.status,
+      dateAcquired: data.dateAcquired,
+    },
+    { new: true }
+  ).lean();
+
+  return updated ? mapItem(updated) : null;
 }
 
 async function updateItemStatus(id, status, currentStatus) {
@@ -169,26 +148,18 @@ async function updateItemStatus(id, status, currentStatus) {
     return mockStore.clone(item);
   }
 
-  let query = supabase
-    .from('items')
-    .update({
-      status,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .eq('is_deleted', false);
+  const oid = toObjectId(id);
+  if (!oid) {
+    return null;
+  }
 
+  const filter = { _id: oid, isDeleted: false };
   if (currentStatus) {
-    query = query.eq('status', currentStatus);
+    filter.status = currentStatus;
   }
 
-  const { data: updatedItem, error } = await query.select().maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return mapItem(updatedItem);
+  const updated = await Item.findOneAndUpdate(filter, { status }, { new: true }).lean();
+  return updated ? mapItem(updated) : null;
 }
 
 async function softDeleteItem(id) {
@@ -203,22 +174,18 @@ async function softDeleteItem(id) {
     return mockStore.clone(item);
   }
 
-  const { data: deletedItem, error } = await supabase
-    .from('items')
-    .update({
-      is_deleted: true,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .eq('is_deleted', false)
-    .select()
-    .maybeSingle();
-
-  if (error) {
-    throw error;
+  const oid = toObjectId(id);
+  if (!oid) {
+    return null;
   }
 
-  return mapItem(deletedItem);
+  const updated = await Item.findOneAndUpdate(
+    { _id: oid, isDeleted: false },
+    { isDeleted: true },
+    { new: true }
+  ).lean();
+
+  return updated ? mapItem(updated) : null;
 }
 
 module.exports = {

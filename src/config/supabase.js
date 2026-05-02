@@ -7,6 +7,8 @@ if (env.useMockData) {
   return;
 }
 
+// Supabase client is for Storage (documents) only; primary data lives in MongoDB.
+
 const rawSupabaseUrl = env.required('SUPABASE_URL');
 const supabaseServiceRoleKey = env.required('SUPABASE_SERVICE_ROLE_KEY');
 const supabaseUrl = /^https?:\/\//i.test(rawSupabaseUrl)
