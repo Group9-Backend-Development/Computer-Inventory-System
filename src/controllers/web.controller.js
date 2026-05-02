@@ -434,7 +434,7 @@ async function reportsIndex(req, res, next) {
       userService.listUsers(),
       selectedUserId ? reportService.listCurrentAssetsForUser(selectedUserId) : Promise.resolve([]),
     ]);
-    const selectedAuditUser = users.find((user) => user.id === selectedUserId);
+    const selectedAuditUser = users.find((user) => String(user.id) === String(selectedUserId));
 
     res.render('reports/index', {
       title: 'Reports',

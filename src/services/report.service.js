@@ -35,23 +35,38 @@ async function inventoryStatusSummary() {
   };
 }
 
+function formatAcquiredForReport(value) {
+  if (!value) {
+    return '';
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return String(value);
+  }
+  return d.toLocaleDateString('en', { dateStyle: 'medium' });
+}
+
 async function listAssetsOlderThanThreeYears() {
   const cutoff = new Date();
   cutoff.setFullYear(cutoff.getFullYear() - 3);
 
   if (env.useMockData) {
-    return mockStore.clone(
-      mockStore.items
-        .filter((item) => !item.isDeleted && item.dateAcquired && new Date(item.dateAcquired) < cutoff)
-        .sort((a, b) => new Date(a.dateAcquired) - new Date(b.dateAcquired))
-    );
+    const rows = mockStore
+      .clone(
+        mockStore.items
+          .filter((item) => !item.isDeleted && item.dateAcquired && new Date(item.dateAcquired) < cutoff)
+          .sort((a, b) => new Date(a.dateAcquired) - new Date(b.dateAcquired))
+      )
+      .map((item) => ({ ...item, dateAcquiredDisplay: formatAcquiredForReport(item.dateAcquired) }));
+    return rows;
   }
 
   const items = await itemService.listActiveItems();
 
   return items
     .filter((item) => item.dateAcquired && new Date(item.dateAcquired) < cutoff)
-    .sort((a, b) => new Date(a.dateAcquired) - new Date(b.dateAcquired));
+    .sort((a, b) => new Date(a.dateAcquired) - new Date(b.dateAcquired))
+    .map((item) => ({ ...item, dateAcquiredDisplay: formatAcquiredForReport(item.dateAcquired) }));
 }
 
 async function listCurrentAssetsForUser(userId) {
@@ -70,7 +85,8 @@ async function listCurrentAssetsForUser(userId) {
     const transactions = await transactionService.listHistoryForItem(item._id);
     const openCheckout = transactionService.getOpenCheckout(transactions);
 
-    if (openCheckout?.assigneeId === userId) {
+    const assignee = openCheckout?.assigneeId != null ? String(openCheckout.assigneeId) : '';
+    if (assignee && assignee === String(userId)) {
       assignedItems.push({
         ...item,
         checkedOutAt: openCheckout.createdAtLabel,

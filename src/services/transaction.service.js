@@ -173,19 +173,15 @@ async function listHistoryForItem(itemId) {
 }
 
 function getOpenCheckout(transactions) {
-  for (let index = transactions.length - 1; index >= 0; index -= 1) {
-    const transaction = transactions[index];
-
-    if (transaction.type === 'checkin') {
-      return null;
-    }
-
+  let open = null;
+  for (const transaction of transactions) {
     if (transaction.type === 'checkout') {
-      return transaction;
+      open = transaction;
+    } else if (transaction.type === 'checkin') {
+      open = null;
     }
   }
-
-  return null;
+  return open;
 }
 
 function buildAssignmentHistory(transactions) {
